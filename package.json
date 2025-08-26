@@ -1,0 +1,35 @@
+{
+  "name": "petroverse-v2",
+  "version": "2.0.0",
+  "description": "Futuristic AI-Powered Analytics Platform for Petroleum Distribution",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "db:migrate": "npm run -w @petroverse/database migrate",
+    "db:seed": "npm run -w @petroverse/database seed",
+    "ai:train": "npm run -w @petroverse/ml-pipeline train",
+    "deploy": "turbo run deploy"
+  },
+  "devDependencies": {
+    "turbo": "^1.11.0",
+    "prettier": "^3.1.0",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.0",
+    "@types/node": "^20.10.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@10.2.0"
+}

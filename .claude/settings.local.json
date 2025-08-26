@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(set PORT=3004)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(start http://localhost:3004)",
+      "Bash(uvicorn:*)",
+      "Bash(npm install:*)",
+      "Bash(start http://localhost:3003)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

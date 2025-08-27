@@ -1,12 +1,17 @@
 # Dependencies
 node_modules/
+packages/*/node_modules/
+apps/*/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
 
-# Production
+# Production & Build
 /build
 /dist
+.next/
+out/
 
 # Environment variables
 .env
@@ -14,10 +19,13 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+config.env
 
 # IDE
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
 *.swp
 *.swo
 *~
@@ -25,6 +33,7 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Python
 __pycache__/
@@ -36,6 +45,18 @@ venv/
 .venv
 pip-log.txt
 pip-delete-this-directory.txt
+*.so
+.pytest_cache/
+.coverage
+.mypy_cache/
+*.egg-info/
+*.egg
+
+# Database backups (large files)
+*.sql
+*.db
+*.sqlite
+*.sqlite3
 
 # Logs
 logs/
@@ -45,7 +66,34 @@ logs/
 coverage/
 .nyc_output
 
-# Misc
+# Archives and backups
+archived_data/*.csv
+archived_data/*.xlsx
+archived_scripts/*.log
+archived_sql/*.sql
+backups/**/*
+!archived_*/README.md
+!backups/README.md
+
+# Data files
+data/raw/**/*.csv
+data/processed/**/*.csv
+data/archive/**/*.csv
+*.csv.gz
+*.xlsx.tmp
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+nul
+
+# Cache
 .cache/
 .temp/
-*.tmp
+.parcel-cache/
+
+# Misc
+credentials/
+secrets/

@@ -1,259 +1,193 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-  ChartOptions
-} from 'chart.js';
-import GlobalFilters, { FilterState } from '@/components/filters/GlobalFilters';
+import { useState, useEffect, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import GlobalFilters from '@/components/filters/GlobalFilters';
+import { useGlobalFilters } from '@/lib/global-filters';
 import { 
-  TrendingUp, 
-  TrendingDown, 
-  Activity, 
-  Users, 
-  Package, 
-  AlertCircle,
-  Fuel,
-  Gauge
-} from 'lucide-react';
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+interface KPIData {
+  total_companies: number;
+  total_products: number;
+  total_volume_liters: number;
+  total_volume_mt?: number;
+  total_volume_kg?: number;
+  total_transactions: number;
+  bdc_volume_liters?: number;
+  omc_volume_liters?: number;
+  bdc_volume_mt?: number;
+  omc_volume_mt?: number;
+  bdc_volume_kg?: number;
+  omc_volume_kg?: number;
+  bdc_companies?: number;
+  omc_companies?: number;
+  // Industry analytics metrics
+  bdc_market_share?: number;
+  bdc_to_omc_ratio?: number;
+  avg_bdc_company_volume?: number;
+  avg_omc_company_volume?: number;
+}
 
-interface DashboardData {
-  gauges: {
-    bdc_volume: number;
-    omc_volume: number;
-    bdc_target: number;
-    omc_target: number;
-  };
-  kpis: {
-    total_bdc_supply: number;
-    total_omc_distribution: number;
-    bdc_growth: number;
-    omc_growth: number;
-    active_bdc_count: number;
-    active_omc_count: number;
-  };
-  trends: Array<{
-    month: string;
-    bdc_volume: number;
-    omc_volume: number;
-  }>;
-  top_bdcs: Array<{
-    name: string;
-    volume: number;
-    market_share: number;
-  }>;
-  top_omcs: Array<{
-    name: string;
-    volume: number;
-    market_share: number;
-  }>;
-  product_distribution: Array<{
-    name: string;
-    volume: number;
-  }>;
+interface TrendData {
+  period: string;
+  bdc_volume_liters: number;
+  omc_volume_liters: number;
+  bdc_volume_mt: number;
+  omc_volume_mt: number;
+  bdc_volume_kg: number;
+  omc_volume_kg: number;
+  total_volume_liters: number;
+  total_volume_mt: number;
+  total_volume_kg: number;
+}
+
+interface APIResponse {
+  kpis: KPIData;
+  trend_data: TrendData[];
+}
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+function formatNumber(num: number | undefined | null): string {
+  if (num === undefined || num === null || isNaN(num)) {
+    return '0';
+  }
+  if (num >= 1e9) {
+    return (num / 1e9).toFixed(1) + 'B';
+  }
+  if (num >= 1e6) {
+    return (num / 1e6).toFixed(1) + 'M';
+  }
+  if (num >= 1e3) {
+    return (num / 1e3).toFixed(1) + 'K';
+  }
+  return num.toString();
+}
+
+function formatVolume(volume: number | undefined | null): string {
+  return formatNumber(volume) + ' L';
+}
+
+function formatMT(volume: number | undefined | null): string {
+  return formatNumber(volume) + ' MT';
 }
 
 export default function ExecutiveDashboard() {
-  const [filters, setFilters] = useState<FilterState>({
-    dateRange: { start: '', end: '', preset: 'all' },
-    companyType: ['All'],
-    products: [],
-    companies: [],
-    years: [],
-    months: [],
-    volumeRange: { min: 0, max: 1000000000 },
-    dataQuality: { includeOutliers: true, minQualityScore: 0 },
-    volumeUnit: 'liters',
-    topN: 5
-  });
-
+  const [data, setData] = useState<APIResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Global filters integration
+  const { 
+    getFilterParams, 
+    startDate, 
+    endDate, 
+    selectedCompanies, 
+    selectedBusinessTypes, 
+    selectedProducts, 
+    selectedProductCategories, 
+    topN,
+    volumeUnit 
+  } = useGlobalFilters();
 
-  // Fetch data from database
   useEffect(() => {
+    // Cancel any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    
     const fetchData = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('access_token');
+        const params = getFilterParams();
+        const hasFilters = params.toString().length > 0;
         
-        // Build query params from filters
-        const params = new URLSearchParams();
-        if (filters.dateRange.start) params.append('date_start', filters.dateRange.start);
-        if (filters.dateRange.end) params.append('date_end', filters.dateRange.end);
-        if (filters.companyType.length > 0 && !filters.companyType.includes('All')) {
-          params.append('company_type', filters.companyType.join(','));
-        }
-        if (filters.companies.length > 0) {
-          params.append('companies', filters.companies.join(','));
-        }
-        if (filters.products.length > 0) {
-          params.append('products', filters.products.join(','));
-        }
-        params.append('top_n', filters.topN.toString());
+        const endpoint = hasFilters 
+          ? `http://localhost:8003/api/v2/executive/summary/filtered?${params.toString()}`
+          : 'http://localhost:8003/api/v2/executive/summary';
         
-        // Fetch executive overview data
-        const response = await fetch(`http://localhost:8003/api/v2/executive/overview?${params.toString()}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+        const response = await fetch(endpoint, {
+          signal: abortController.signal
         });
         
-        if (response.ok) {
-          const dashboardData = await response.json();
-          
-          // Convert to MT if needed
-          if (filters.volumeUnit === 'mt') {
-            // Approximate conversion: 1 MT of petroleum ≈ 1,200 liters
-            const conversionFactor = 1200;
-            
-            dashboardData.gauges.bdc_volume /= conversionFactor;
-            dashboardData.gauges.omc_volume /= conversionFactor;
-            dashboardData.gauges.bdc_target /= conversionFactor;
-            dashboardData.gauges.omc_target /= conversionFactor;
-            
-            dashboardData.kpis.total_bdc_supply /= conversionFactor;
-            dashboardData.kpis.total_omc_distribution /= conversionFactor;
-            
-            dashboardData.trends.forEach((t: any) => {
-              t.bdc_volume /= conversionFactor;
-              t.omc_volume /= conversionFactor;
-            });
-            
-            dashboardData.top_bdcs.forEach((c: any) => {
-              c.volume /= conversionFactor;
-            });
-            
-            dashboardData.top_omcs.forEach((c: any) => {
-              c.volume /= conversionFactor;
-            });
-            
-            dashboardData.product_distribution.forEach((p: any) => {
-              p.volume /= conversionFactor;
-            });
-          }
-          
-          // Limit to topN
-          dashboardData.top_bdcs = dashboardData.top_bdcs.slice(0, filters.topN);
-          dashboardData.top_omcs = dashboardData.top_omcs.slice(0, filters.topN);
-          dashboardData.product_distribution = dashboardData.product_distribution.slice(0, filters.topN);
-          
-          setData(dashboardData);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        const result = await response.json();
+        
+        // Only update if this request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setData(result);
+          setError(null);
+        }
+      } catch (err) {
+        // Ignore abort errors
+        if (err instanceof Error && err.name !== 'AbortError') {
+          setError(err.message);
+          console.error('Error fetching executive data:', err);
+        }
       } finally {
-        setLoading(false);
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
     
-    if (filters.dateRange.start && filters.dateRange.end) {
+    // Add small debounce to prevent rapid filter changes
+    const timeoutId = setTimeout(() => {
       fetchData();
-    }
-  }, [filters]);
-
-  const handleFiltersChange = useCallback((newFilters: FilterState) => {
-    setFilters(newFilters);
-  }, []);
-
-  const formatVolume = (value: number) => {
-    const unit = filters.volumeUnit === 'mt' ? 'MT' : 'L';
-    if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(1)}M ${unit}`;
-    } else if (value >= 1000) {
-      return `${(value / 1000).toFixed(1)}K ${unit}`;
-    }
-    return `${value.toFixed(0)} ${unit}`;
-  };
-
-  // Gauge Chart Component
-  const GaugeChart = ({ value, target, title, color }: { value: number; target: number; title: string; color: string }) => {
-    const percentage = Math.min((value / target) * 100, 100);
+    }, 300);
     
+    // Cleanup
+    return () => {
+      clearTimeout(timeoutId);
+      if (abortController) {
+        abortController.abort();
+      }
+    };
+  }, [startDate, endDate, selectedCompanies, selectedBusinessTypes, selectedProducts, selectedProductCategories, topN, volumeUnit, getFilterParams]);
+
+  if (loading) {
     return (
-      <div className="bg-gray-800 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-gray-400 mb-3">{title}</h3>
-        <div className="relative">
-          <div className="flex items-center justify-center">
-            <div className="relative w-32 h-32">
-              <svg className="w-32 h-32 transform -rotate-90">
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="56"
-                  stroke="currentColor"
-                  strokeWidth="12"
-                  fill="none"
-                  className="text-gray-700"
-                />
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="56"
-                  stroke={color}
-                  strokeWidth="12"
-                  fill="none"
-                  strokeDasharray={`${(percentage * 351.86) / 100} 351.86`}
-                  className="transition-all duration-500"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <Gauge className="w-6 h-6 text-gray-500 mb-1" />
-                <span className="text-2xl font-bold text-white">{percentage.toFixed(0)}%</span>
-              </div>
-            </div>
-          </div>
-          <div className="mt-3 text-center">
-            <p className="text-xs text-gray-500">Current</p>
-            <p className="text-sm font-semibold text-white">{formatVolume(value)}</p>
-            <p className="text-xs text-gray-500 mt-1">Target: {formatVolume(target)}</p>
-          </div>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading Executive Dashboard...</p>
         </div>
       </div>
     );
-  };
+  }
 
-  // Loading state
-  if (loading && !data) {
+  if (error) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white">Executive Overview</h1>
-        </div>
-        <GlobalFilters onFiltersChange={handleFiltersChange} />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-gray-800 rounded-lg p-6 animate-pulse">
-              <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
-              <div className="h-8 bg-gray-700 rounded w-1/2"></div>
-            </div>
-          ))}
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">⚠️ Error Loading Dashboard</div>
+          <p className="text-gray-400">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -261,356 +195,313 @@ export default function ExecutiveDashboard() {
 
   if (!data) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white">Executive Overview</h1>
-        </div>
-        <GlobalFilters onFiltersChange={handleFiltersChange} />
-        <div className="bg-gray-800 rounded-lg p-6 text-center">
-          <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
-          <p className="text-gray-400">Loading data from database...</p>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-400">No data available</p>
         </div>
       </div>
     );
   }
 
-  // Chart configurations
-  const monthlyTrendData = {
-    labels: data.trends.map(t => t.month),
-    datasets: [
-      {
-        label: 'BDC Volume',
-        data: data.trends.map(t => t.bdc_volume),
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0.4,
-        fill: true
-      },
-      {
-        label: 'OMC Volume',
-        data: data.trends.map(t => t.omc_volume),
-        borderColor: 'rgb(168, 85, 247)',
-        backgroundColor: 'rgba(168, 85, 247, 0.1)',
-        tension: 0.4,
-        fill: true
-      }
-    ]
-  };
+  const { kpis, trend_data = [], industry_trends = [] } = data;
+  
+  // Use industry_trends if trend_data is not available (filtered endpoints return industry_trends)
+  const trendData = trend_data.length > 0 ? trend_data : 
+    industry_trends.map(item => ({
+      period: item.period,
+      bdc_volume_liters: item.bdc_volume_liters || 0,
+      omc_volume_liters: item.omc_volume_liters || 0,
+      bdc_volume_mt: item.bdc_volume_mt || 0,
+      omc_volume_mt: item.omc_volume_mt || 0,
+      bdc_volume_kg: 0,
+      omc_volume_kg: 0,
+      total_volume_liters: item.total_volume || ((item.bdc_volume_liters || 0) + (item.omc_volume_liters || 0)),
+      total_volume_mt: (item.bdc_volume_mt || 0) + (item.omc_volume_mt || 0),
+      total_volume_kg: 0
+    }));
 
-  const topBDCData = {
-    labels: data.top_bdcs.map(c => c.name.length > 20 ? c.name.substring(0, 20) + '...' : c.name),
-    datasets: [{
-      data: data.top_bdcs.map(c => c.volume),
-      backgroundColor: [
-        'rgba(59, 130, 246, 0.8)',
-        'rgba(59, 130, 246, 0.6)',
-        'rgba(59, 130, 246, 0.4)',
-        'rgba(59, 130, 246, 0.3)',
-        'rgba(59, 130, 246, 0.2)',
-      ],
-      borderColor: 'rgb(59, 130, 246)',
-      borderWidth: 1
-    }]
-  };
+  // Calculate growth rates (simple last vs first in trend data)
+  const bdcGrowth = trendData.length > 1 ? 
+    ((trendData[trendData.length - 1].bdc_volume_liters - trendData[0].bdc_volume_liters) / trendData[0].bdc_volume_liters * 100) : 0;
+  
+  const omcGrowth = trendData.length > 1 ? 
+    ((trendData[trendData.length - 1].omc_volume_liters - trendData[0].omc_volume_liters) / trendData[0].omc_volume_liters * 100) : 0;
 
-  const topOMCData = {
-    labels: data.top_omcs.map(c => c.name.length > 20 ? c.name.substring(0, 20) + '...' : c.name),
-    datasets: [{
-      data: data.top_omcs.map(c => c.volume),
-      backgroundColor: [
-        'rgba(168, 85, 247, 0.8)',
-        'rgba(168, 85, 247, 0.6)',
-        'rgba(168, 85, 247, 0.4)',
-        'rgba(168, 85, 247, 0.3)',
-        'rgba(168, 85, 247, 0.2)',
-      ],
-      borderColor: 'rgb(168, 85, 247)',
-      borderWidth: 1
-    }]
-  };
+  // Prepare chart data - handle both filtered and unfiltered responses
+  const volumeComparisonData = [
+    { name: 'BDC Volume', 
+      value: volumeUnit === 'liters' ? (kpis.bdc_volume_liters || 0) : (kpis.bdc_volume_mt || 0), 
+      color: '#0088FE' },
+    { name: 'OMC Volume', 
+      value: volumeUnit === 'liters' ? (kpis.omc_volume_liters || 0) : (kpis.omc_volume_mt || 0), 
+      color: '#00C49F' }
+  ];
 
-  const productMixData = {
-    labels: data.product_distribution.map(p => p.name),
-    datasets: [{
-      data: data.product_distribution.map(p => p.volume),
-      backgroundColor: [
-        'rgba(59, 130, 246, 0.8)',
-        'rgba(168, 85, 247, 0.8)',
-        'rgba(16, 185, 129, 0.8)',
-        'rgba(251, 146, 60, 0.8)',
-        'rgba(244, 63, 94, 0.8)',
-      ],
-      borderWidth: 0
-    }]
-  };
-
-  const chartOptions: ChartOptions<'line'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'top',
-        labels: { color: 'rgb(156, 163, 175)' }
-      },
-      tooltip: {
-        callbacks: {
-          label: (context) => {
-            return `${context.dataset.label}: ${formatVolume(context.parsed.y)}`;
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        grid: { color: 'rgba(75, 85, 99, 0.3)' },
-        ticks: { color: 'rgb(156, 163, 175)' }
-      },
-      y: {
-        grid: { color: 'rgba(75, 85, 99, 0.3)' },
-        ticks: { 
-          color: 'rgb(156, 163, 175)',
-          callback: function(value) {
-            return formatVolume(Number(value));
-          }
-        }
-      }
-    }
-  };
-
-  const barOptions: ChartOptions<'bar'> = {
-    indexAxis: 'y',
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (context) => {
-            const idx = context.dataIndex;
-            const volume = formatVolume(context.parsed.x);
-            const share = context.chart.data.labels?.[idx] || '';
-            const marketShare = share.includes('BDC') 
-              ? data.top_bdcs[idx]?.market_share 
-              : data.top_omcs[idx]?.market_share;
-            return [`Volume: ${volume}`, marketShare ? `Market Share: ${marketShare.toFixed(1)}%` : ''];
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        grid: { color: 'rgba(75, 85, 99, 0.3)' },
-        ticks: { 
-          color: 'rgb(156, 163, 175)',
-          callback: function(value) {
-            return formatVolume(Number(value));
-          }
-        }
-      },
-      y: {
-        grid: { display: false },
-        ticks: { color: 'rgb(156, 163, 175)' }
-      }
-    }
-  };
-
-  const doughnutOptions: ChartOptions<'doughnut'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'right',
-        labels: { 
-          color: 'rgb(156, 163, 175)',
-          padding: 10,
-          font: { size: 11 }
-        }
-      },
-      tooltip: {
-        callbacks: {
-          label: (context) => {
-            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-            const percentage = ((context.parsed / total) * 100).toFixed(1);
-            return `${context.label}: ${formatVolume(context.parsed)} (${percentage}%)`;
-          }
-        }
-      }
-    }
-  };
+  const companyCountData = [
+    { name: 'BDC Companies', value: kpis.bdc_companies || 0, color: '#0088FE' },
+    { name: 'OMC Companies', value: kpis.omc_companies || 0, color: '#00C49F' }
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white">Executive Overview</h1>
-        <div className="text-sm text-gray-400">
-          Real-time data from database
+    <div className="min-h-screen bg-gray-900 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Executive Dashboard</h1>
+          <p className="text-gray-400">Real-time petroleum industry analytics</p>
         </div>
-      </div>
-
-      {/* Global Filters */}
-      <GlobalFilters onFiltersChange={handleFiltersChange} />
-
-      {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <div className="bg-gray-800 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400">BDC Supply</span>
-            <Package className="w-4 h-4 text-blue-500" />
-          </div>
-          <p className="text-xl font-bold text-white">{formatVolume(data.kpis.total_bdc_supply)}</p>
-          <div className="flex items-center mt-1">
-            {data.kpis.bdc_growth >= 0 ? (
-              <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
-            ) : (
-              <TrendingDown className="w-3 h-3 text-red-500 mr-1" />
-            )}
-            <span className={`text-xs ${data.kpis.bdc_growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {Math.abs(data.kpis.bdc_growth).toFixed(1)}%
-            </span>
-          </div>
+        
+        {/* Global Filters */}
+        <div className="mb-6">
+          <GlobalFilters />
         </div>
 
-        <div className="bg-gray-800 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400">OMC Distribution</span>
-            <Fuel className="w-4 h-4 text-purple-500" />
-          </div>
-          <p className="text-xl font-bold text-white">{formatVolume(data.kpis.total_omc_distribution)}</p>
-          <div className="flex items-center mt-1">
-            {data.kpis.omc_growth >= 0 ? (
-              <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
-            ) : (
-              <TrendingDown className="w-3 h-3 text-red-500 mr-1" />
-            )}
-            <span className={`text-xs ${data.kpis.omc_growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {Math.abs(data.kpis.omc_growth).toFixed(1)}%
-            </span>
-          </div>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-gray-400 text-sm font-medium">Total Volume</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {volumeUnit === 'liters' 
+                  ? formatVolume(kpis.total_volume_liters)
+                  : formatMT(kpis.total_volume_mt || 0)}
+              </div>
+              <div className="text-sm text-gray-400 mt-1">
+                {volumeUnit === 'liters' 
+                  ? formatMT(kpis.total_volume_mt || 0)
+                  : formatVolume(kpis.total_volume_liters)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-gray-400 text-sm font-medium">Total Companies</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {kpis.total_companies}
+              </div>
+              <div className="text-sm text-gray-400 mt-1">
+                {kpis.bdc_companies || 0} BDC + {kpis.omc_companies || 0} OMC
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-gray-400 text-sm font-medium">Total Transactions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {formatNumber(kpis.total_transactions)}
+              </div>
+              <div className="text-sm text-gray-400 mt-1">
+                Across {kpis.total_products} products
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-gray-400 text-sm font-medium">BDC vs OMC Ratio</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {(((kpis.bdc_volume_liters || 0) / kpis.total_volume_liters) * 100).toFixed(1)}%
+              </div>
+              <div className="text-sm text-gray-400 mt-1">
+                BDC Market Share
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-gray-400 text-sm font-medium">Industry Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {kpis.bdc_market_share ? kpis.bdc_market_share.toFixed(1) : 'N/A'}%
+              </div>
+              <div className="text-sm text-gray-400 mt-1">
+                BDC Market Share
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="bg-gray-800 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400">BDC Growth</span>
-            <Activity className="w-4 h-4 text-blue-500" />
-          </div>
-          <p className="text-xl font-bold text-white">
-            {data.kpis.bdc_growth >= 0 ? '+' : ''}{data.kpis.bdc_growth.toFixed(1)}%
-          </p>
-          <p className="text-xs text-gray-500 mt-1">YoY</p>
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Volume Trend Chart */}
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">Industry Volume Trend</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={trendData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="period" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" tickFormatter={formatNumber} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', color: '#111827' }}
+                    labelStyle={{ color: '#F3F4F6' }}
+                    formatter={(value: number) => [volumeUnit === 'liters' ? formatVolume(value) : formatMT(value), 'Volume']}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey={volumeUnit === 'liters' ? "bdc_volume_liters" : "bdc_volume_mt"} 
+                    stroke="#0088FE" 
+                    strokeWidth={2}
+                    name="BDC Volume"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey={volumeUnit === 'liters' ? "omc_volume_liters" : "omc_volume_mt"} 
+                    stroke="#00C49F" 
+                    strokeWidth={2}
+                    name="OMC Volume"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Volume Comparison Pie Chart */}
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">BDC vs OMC Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={volumeComparisonData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(entry) => `${entry.name}: ${formatVolume(entry.value)}`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {volumeComparisonData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => volumeUnit === 'liters' ? formatVolume(value) : formatMT(value)} />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="bg-gray-800 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400">OMC Growth</span>
-            <Activity className="w-4 h-4 text-purple-500" />
-          </div>
-          <p className="text-xl font-bold text-white">
-            {data.kpis.omc_growth >= 0 ? '+' : ''}{data.kpis.omc_growth.toFixed(1)}%
-          </p>
-          <p className="text-xs text-gray-500 mt-1">YoY</p>
+        {/* Industry Performance */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">BDC Performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">BDC Volume:</span>
+                  <span className="text-white font-bold">
+                    {volumeUnit === 'liters' 
+                      ? formatVolume(kpis.bdc_volume_liters || 0)
+                      : formatMT(kpis.bdc_volume_mt || 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">BDC Companies:</span>
+                  <span className="text-white font-bold">{kpis.bdc_companies || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Growth Trend:</span>
+                  <span className={`font-bold ${bdcGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {bdcGrowth >= 0 ? '+' : ''}{bdcGrowth.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Alt. Unit:</span>
+                  <span className="text-white font-bold">
+                    {volumeUnit === 'mt' 
+                      ? formatVolume(kpis.bdc_volume_liters || 0)
+                      : formatMT(kpis.bdc_volume_mt || 0)}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">OMC Performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">OMC Volume:</span>
+                  <span className="text-white font-bold">
+                    {volumeUnit === 'liters' 
+                      ? formatVolume(kpis.omc_volume_liters || 0)
+                      : formatMT(kpis.omc_volume_mt || 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">OMC Companies:</span>
+                  <span className="text-white font-bold">{kpis.omc_companies || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Growth Trend:</span>
+                  <span className={`font-bold ${omcGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {omcGrowth >= 0 ? '+' : ''}{omcGrowth.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Alt. Unit:</span>
+                  <span className="text-white font-bold">
+                    {volumeUnit === 'mt' 
+                      ? formatVolume(kpis.omc_volume_liters || 0)
+                      : formatMT(kpis.omc_volume_mt || 0)}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="bg-gray-800 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400">Active BDCs</span>
-            <Users className="w-4 h-4 text-blue-500" />
-          </div>
-          <p className="text-xl font-bold text-white">{data.kpis.active_bdc_count}</p>
-          <p className="text-xs text-gray-500 mt-1">Companies</p>
-        </div>
+        {/* Company Count Bar Chart */}
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white">Industry Participants</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={companyCountData} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis type="number" stroke="#9CA3AF" />
+                <YAxis type="category" dataKey="name" stroke="#9CA3AF" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', color: '#111827' }}
+                  labelStyle={{ color: '#F3F4F6' }}
+                />
+                <Bar dataKey="value" fill="#0088FE" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-        <div className="bg-gray-800 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400">Active OMCs</span>
-            <Users className="w-4 h-4 text-purple-500" />
-          </div>
-          <p className="text-xl font-bold text-white">{data.kpis.active_omc_count}</p>
-          <p className="text-xs text-gray-500 mt-1">Companies</p>
-        </div>
-      </div>
-
-      {/* Gauge Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <GaugeChart 
-          value={data.gauges.bdc_volume} 
-          target={data.gauges.bdc_target}
-          title="BDC Monthly Supply Volume"
-          color="rgb(59, 130, 246)"
-        />
-        <GaugeChart 
-          value={data.gauges.omc_volume} 
-          target={data.gauges.omc_target}
-          title="OMC Monthly Distribution Volume"
-          color="rgb(168, 85, 247)"
-        />
-      </div>
-
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Top BDC Suppliers */}
-        <div className="bg-gray-800 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-400 mb-4">Top {filters.topN} BDC Suppliers</h3>
-          <div className="h-64">
-            <Bar data={topBDCData} options={barOptions} />
-          </div>
-        </div>
-
-        {/* Top OMC Distributors */}
-        <div className="bg-gray-800 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-400 mb-4">Top {filters.topN} OMC Distributors</h3>
-          <div className="h-64">
-            <Bar data={topOMCData} options={barOptions} />
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Product Mix */}
-        <div className="bg-gray-800 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-400 mb-4">Product Mix</h3>
-          <div className="h-64">
-            <Doughnut data={productMixData} options={doughnutOptions} />
-          </div>
-        </div>
-
-        {/* Monthly Volume Trend */}
-        <div className="bg-gray-800 rounded-lg p-4 lg:col-span-2">
-          <h3 className="text-sm font-medium text-gray-400 mb-4">Monthly Volume Trend</h3>
-          <div className="h-64">
-            <Line data={monthlyTrendData} options={chartOptions} />
-          </div>
-        </div>
-      </div>
-
-      {/* Alerts & Anomalies Panel */}
-      <div className="bg-gray-800 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-gray-400 mb-4">Data Insights</h3>
-        <div className="space-y-2">
-          {data.kpis.bdc_growth < -5 && (
-            <div className="flex items-center gap-2 text-sm">
-              <AlertCircle className="w-4 h-4 text-yellow-500" />
-              <span className="text-gray-300">BDC volume shows decline ({data.kpis.bdc_growth.toFixed(1)}%)</span>
-            </div>
+        {/* Data Source Info */}
+        <div className="mt-8 text-center text-sm text-gray-500">
+          <p suppressHydrationWarning>Data sourced from standardized fact tables • Last updated: {typeof window !== 'undefined' ? new Date().toLocaleString() : 'Loading...'}</p>
+          <p>Industry Analytics: {formatNumber(kpis.total_transactions)} transactions • BDC & OMC Operations • {kpis.total_products} product categories</p>
+          {kpis.bdc_market_share && (
+            <p>BDC market share: {kpis.bdc_market_share.toFixed(1)}% • Industry distribution tracking</p>
           )}
-          {data.kpis.omc_growth > 10 && (
-            <div className="flex items-center gap-2 text-sm">
-              <TrendingUp className="w-4 h-4 text-green-500" />
-              <span className="text-gray-300">OMC distribution showing strong growth ({data.kpis.omc_growth.toFixed(1)}%)</span>
-            </div>
-          )}
-          {data.top_bdcs[0]?.market_share > 30 && (
-            <div className="flex items-center gap-2 text-sm">
-              <AlertCircle className="w-4 h-4 text-blue-500" />
-              <span className="text-gray-300">Market concentration: {data.top_bdcs[0].name} holds {data.top_bdcs[0].market_share.toFixed(1)}% market share</span>
-            </div>
-          )}
-          <div className="flex items-center gap-2 text-sm">
-            <Activity className="w-4 h-4 text-gray-500" />
-            <span className="text-gray-300">Date range: {filters.dateRange.start} to {filters.dateRange.end}</span>
-          </div>
         </div>
       </div>
     </div>

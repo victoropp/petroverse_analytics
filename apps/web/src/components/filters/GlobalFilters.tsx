@@ -2,12 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Calendar, Filter, ChevronDown, X, Check, Search } from 'lucide-react';
-import { useFilterStore } from '@/lib/filter-store';
+import { useGlobalFilters } from '@/lib/global-filters';
 
 interface GlobalFiltersProps {
-  onFiltersChange: (filters: FilterState) => void;
-  availableCompanies?: string[];
-  availableProducts?: string[];
+  restrictToCompanyType?: 'BDC' | 'OMC' | null; // null means no restriction
 }
 
 export interface FilterState {
@@ -58,66 +56,47 @@ interface FilterOptions {
 
 // YEARS will be generated dynamically from database date range
 
-export default function GlobalFilters({ 
-  onFiltersChange, 
-  availableCompanies = [], 
-  availableProducts = [] 
-}: GlobalFiltersProps) {
+export default function GlobalFilters({ restrictToCompanyType = null }: GlobalFiltersProps) {
   // Use global filter store
   const {
-    dateRange,
-    companyType,
-    products,
-    companies,
-    years,
-    months,
-    volumeRange,
-    dataQuality,
-    volumeUnit,
+    startDate,
+    endDate,
+    selectedCompanies,
+    selectedBusinessTypes,
+    selectedProducts,
     topN,
-    setDateRange,
-    setCompanyType,
-    setProducts,
-    setCompanies,
-    setYears,
-    setMonths,
-    setVolumeRange,
-    setDataQuality,
-    setVolumeUnit,
-    setTopN,
-    setFilters,
-    resetFilters
-  } = useFilterStore();
-  
-  // Create filters object for compatibility with existing code
-  const filters = {
-    dateRange,
-    companyType,
-    products,
-    companies,
-    years,
-    months,
-    volumeRange,
-    dataQuality,
     volumeUnit,
-    topN
-  };
+    filterOptions,
+    isLoading,
+    setDateRange,
+    setSelectedCompanies,
+    setSelectedBusinessTypes,
+    setSelectedProducts,
+    setTopN,
+    setVolumeUnit,
+    clearAllFilters,
+    loadFilterOptions
+  } = useGlobalFilters();
   
-  // State for filter options from database
-  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
-    companies: [],
-    products: [],
-    minDate: '',
-    maxDate: ''
+  // Track date preset separately - detect if current dates match database range
+  const [datePreset, setDatePreset] = useState(() => {
+    if (!startDate || !endDate) return 'all';
+    if (filterOptions?.date_range && 
+        startDate === filterOptions.date_range.min_date && 
+        endDate === filterOptions.date_range.max_date) {
+      return 'all';
+    }
+    return 'custom';
   });
   
-  const [loading, setLoading] = useState(true);
+  // State for UI interactions
+  const [loading, setLoading] = useState(isLoading);
   
   // Generate years array dynamically from database date range
   const getYearsFromDateRange = () => {
-    if (!filterOptions.minDate || !filterOptions.maxDate) return [];
-    const startYear = new Date(filterOptions.minDate).getFullYear();
-    const endYear = new Date(filterOptions.maxDate).getFullYear();
+    if (!filterOptions?.date_range) return [];
+    const startYear = new Date(filterOptions.date_range.min_date).getFullYear();
+    const endYear = new Date(filterOptions.date_range.max_date).getFullYear();
     const years = [];
     for (let year = startYear; year <= endYear; year++) {
       years.push(year);
@@ -135,113 +114,34 @@ export default function GlobalFilters({
     companyType: false,
     products: false,
     companies: false,
+    categories: false,
     years: false,
     months: false,
-    topN: false
+    topN: false,
+    advancedCompanies: false,
+    advancedProducts: false
   });
 
   // Refs for click outside detection
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  // Fetch filter options from database on mount
+  // Load filter options on mount
   useEffect(() => {
-    const fetchFilterOptions = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem('access_token');
-        
-        // If no token, try to auto-login for development
-        if (!token) {
-          console.log('No auth token found. Please login first.');
-          // For development, auto-login
-          const loginResponse = await fetch('http://localhost:8003/api/v2/auth/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: 'admin@demo.com',
-              password: 'demo123'
-            })
-          });
-          
-          if (loginResponse.ok) {
-            const data = await loginResponse.json();
-            localStorage.setItem('access_token', data.access_token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            console.log('✅ Auto-login successful');
-          } else {
-            console.error('Auto-login failed. Please login manually.');
-            setLoading(false);
-            return;
-          }
-        }
-        
-        const authToken = localStorage.getItem('access_token');
-        
-        // Fetch filter options
-        const response = await fetch('http://localhost:8003/api/v2/filters/options', {
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          setFilterOptions({
-            companies: data.companies || [],
-            products: data.products || [],
-            minDate: data.min_date || '',
-            maxDate: data.max_date || ''
-          });
-          
-          // Set initial filters with actual data range from database
-          if (data.min_date && data.max_date) {
-            setDateRange({
-              start: data.min_date,
-              end: data.max_date,
-              preset: 'all'
-            });
-          }
-        }
-        
-        // Set default volume range for now (will be fetched from API later)
-        // Commenting out the API call that's causing 500 error due to database schema issue
-        setVolumeRange({
-          min: 0,
-          max: 1000000000 // Will be replaced with real data
-        });
-        
-        // TODO: Fix the backend to support volume_range metric
-        // const volumeResponse = await fetch('http://localhost:8003/api/v2/analytics/query', {
-        //   method: 'POST',
-        //   headers: {
-        //     'Authorization': `Bearer ${authToken}`,
-        //     'Content-Type': 'application/json'
-        //   },
-        //   body: JSON.stringify({
-        //     metrics: ['volume_range'],
-        //     date_range: {},
-        //     filters: {}
-        //   })
-        // });
-      } catch (error) {
-        console.error('Error fetching filter options:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchFilterOptions();
-  }, []);
-
+    loadFilterOptions();
+  }, [loadFilterOptions]);
+  
+  // Apply company type restriction if specified
   useEffect(() => {
-    if (!loading) {
-      onFiltersChange(filters);
+    if (restrictToCompanyType) {
+      setSelectedBusinessTypes([restrictToCompanyType]);
     }
-  }, [filters, onFiltersChange, loading]);
+  }, [restrictToCompanyType, setSelectedBusinessTypes]);
+  
+  useEffect(() => {
+    setLoading(isLoading);
+  }, [isLoading]);
+
+  // Removed onFiltersChange callback - dashboard reacts to store changes directly
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -265,7 +165,6 @@ export default function GlobalFilters({
     
     if (preset === 'custom') {
       setShowDatePicker(true);
-      setDateRange({ ...dateRange, preset });
       return;
     }
     
@@ -277,44 +176,56 @@ export default function GlobalFilters({
         start.setMonth(today.getMonth() - 3);
         break;
       case '1y':
-        start.setFullYear(today.getFullYear() - 1);
+        // Calculate last year dynamically from database max date
+        if (filterOptions?.dateRange?.max_date) {
+          const maxDate = new Date(filterOptions.dateRange.max_date);
+          const lastYear = maxDate.getFullYear() - 1;
+          start = new Date(lastYear, 0, 1); // Jan 1 of last year
+          today = new Date(lastYear, 11, 31); // Dec 31 of last year
+        } else {
+          // Fallback if no filter options loaded yet
+          start = new Date(today.getFullYear() - 1, 0, 1);
+          today = new Date(today.getFullYear() - 1, 11, 31);
+        }
         break;
       case 'ytd':
         start = new Date(today.getFullYear(), 0, 1);
         break;
       case 'all':
         // Use actual dates from database
-        if (filterOptions.minDate && filterOptions.maxDate) {
-          start = new Date(filterOptions.minDate);
-          today = new Date(filterOptions.maxDate);
+        if (filterOptions?.date_range) {
+          start = new Date(filterOptions.date_range.min_date);
+          today = new Date(filterOptions.date_range.max_date);
+        } else {
+          // If filterOptions not loaded yet, don't set dates - wait for them to load
+          console.warn('Filter options not loaded yet, cannot set All Time range');
+          return;
         }
         break;
     }
 
-    setDateRange({
-      start: start.toISOString().split('T')[0],
-      end: today.toISOString().split('T')[0],
-      preset
-    });
+    setDateRange(
+      start.toISOString().split('T')[0],
+      today.toISOString().split('T')[0]
+    );
+    setDatePreset(preset);
     setShowDatePicker(false);
   };
 
   const handleCustomDateChange = (field: 'start' | 'end', value: string) => {
-    setDateRange({
-      ...dateRange,
-      [field]: value,
-      preset: 'custom'
-    });
+    if (field === 'start') {
+      setDateRange(value, endDate);
+    } else {
+      setDateRange(startDate, value);
+    }
   };
 
   const toggleCompanyType = (type: string) => {
-    let newTypes = [...companyType];
+    let newTypes = [...selectedBusinessTypes];
     
     if (type === 'All') {
-      newTypes = ['All'];
+      newTypes = ['BDC', 'OMC'];
     } else {
-      newTypes = newTypes.filter(t => t !== 'All');
-      
       if (newTypes.includes(type)) {
         newTypes = newTypes.filter(t => t !== type);
       } else {
@@ -322,46 +233,52 @@ export default function GlobalFilters({
       }
       
       if (newTypes.length === 0) {
-        newTypes = ['All'];
+        newTypes = ['BDC', 'OMC'];
       }
     }
     
-    setCompanyType(newTypes);
+    setSelectedBusinessTypes(newTypes);
   };
 
   const toggleMultiSelect = (value: string | number, field: 'products' | 'companies' | 'years' | 'months') => {
-    const currentValues = filters[field] as any[];
-    const newValues = currentValues.includes(value as never) 
-      ? currentValues.filter(v => v !== value)
-      : [...currentValues, value as never];
-    
     switch (field) {
       case 'products':
-        setProducts(newValues);
+        const newProducts = selectedProducts.includes(value as string) 
+          ? selectedProducts.filter(v => v !== value)
+          : [...selectedProducts, value as string];
+        setSelectedProducts(newProducts);
         break;
       case 'companies':
-        setCompanies(newValues);
+        const newCompanies = selectedCompanies.includes(value as string) 
+          ? selectedCompanies.filter(v => v !== value)
+          : [...selectedCompanies, value as string];
+        setSelectedCompanies(newCompanies);
         break;
-      case 'years':
-        setYears(newValues);
-        break;
-      case 'months':
-        setMonths(newValues);
-        break;
+      // years and months not used in new store
     }
   };
 
-  const clearAllFilters = () => {
-    resetFilters();
+  const handleClearAllFilters = () => {
+    clearAllFilters();
   };
 
   // Filter products and companies based on search
-  const filteredProducts = filterOptions.products.filter(p => 
+  const filteredProducts = filterOptions?.products?.filter(p => 
     p.name.toLowerCase().includes(searchTerms.products.toLowerCase())
-  );
-  const filteredCompanies = filterOptions.companies.filter(c => 
-    c.name.toLowerCase().includes(searchTerms.companies.toLowerCase())
-  );
+  ) || [];
+  const filteredCompanies = filterOptions?.companies?.filter(c => {
+    // First filter by search term
+    const matchesSearch = c.name.toLowerCase().includes(searchTerms.companies.toLowerCase());
+    // If there's a restriction, only show companies of that type
+    if (restrictToCompanyType) {
+      return matchesSearch && c.type === restrictToCompanyType;
+    }
+    // Otherwise filter by selected business types
+    const matchesType = selectedBusinessTypes.length === 0 || 
+                       selectedBusinessTypes.length === 2 || 
+                       selectedBusinessTypes.includes(c.type);
+    return matchesSearch && matchesType;
+  }) || [];
 
   if (loading) {
     return (
@@ -388,7 +305,7 @@ export default function GlobalFilters({
           <div className="flex gap-2">
             <select 
               className="bg-gray-700 text-white rounded-lg px-3 py-2 text-sm flex-1 border border-gray-600 focus:border-blue-500 focus:outline-none cursor-pointer"
-              value={filters.dateRange.preset}
+              value={datePreset}
               onChange={(e) => handleDatePreset(e.target.value)}
             >
               {PRESET_RANGES.map(range => (
@@ -411,7 +328,7 @@ export default function GlobalFilters({
                   <label className="text-xs text-gray-400 block mb-1">Start Date</label>
                   <input
                     type="date"
-                    value={filters.dateRange.start}
+                    value={startDate}
                     onChange={(e) => handleCustomDateChange('start', e.target.value)}
                     className="bg-gray-600 text-white rounded px-2 py-1 text-sm border border-gray-500"
                   />
@@ -420,7 +337,7 @@ export default function GlobalFilters({
                   <label className="text-xs text-gray-400 block mb-1">End Date</label>
                   <input
                     type="date"
-                    value={filters.dateRange.end}
+                    value={endDate}
                     onChange={(e) => handleCustomDateChange('end', e.target.value)}
                     className="bg-gray-600 text-white rounded px-2 py-1 text-sm border border-gray-500"
                   />
@@ -443,7 +360,7 @@ export default function GlobalFilters({
             <button
               onClick={() => setVolumeUnit('liters')}
               className={`px-3 py-2 text-sm flex-1 transition-colors ${
-                filters.volumeUnit === 'liters' 
+                volumeUnit === 'liters' 
                   ? 'bg-blue-600 text-white' 
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
@@ -453,7 +370,7 @@ export default function GlobalFilters({
             <button
               onClick={() => setVolumeUnit('mt')}
               className={`px-3 py-2 text-sm flex-1 transition-colors ${
-                filters.volumeUnit === 'mt' 
+                volumeUnit === 'mt' 
                   ? 'bg-blue-600 text-white' 
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
@@ -470,7 +387,7 @@ export default function GlobalFilters({
             onClick={() => setDropdownOpen(prev => ({ ...prev, topN: !prev.topN }))}
             className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm border border-gray-600 focus:border-blue-500 focus:outline-none flex items-center justify-between hover:bg-gray-600 transition-colors"
           >
-            <span>Top {filters.topN}</span>
+            <span>Top {topN}</span>
             <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen.topN ? 'rotate-180' : ''}`} />
           </button>
           
@@ -486,39 +403,48 @@ export default function GlobalFilters({
                   className="w-full px-3 py-2 text-sm text-left hover:bg-gray-600 flex items-center justify-between transition-colors"
                 >
                   <span className="text-white">Top {n}</span>
-                  {filters.topN === n && <Check className="w-4 h-4 text-blue-400" />}
+                  {topN === n && <Check className="w-4 h-4 text-blue-400" />}
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Company Type Filter */}
-        <div className="relative min-w-[180px]" ref={el => dropdownRefs.current.companyType = el}>
-          <label className="text-xs text-gray-400 mb-1 block">Company Type</label>
-          <button
-            onClick={() => setDropdownOpen(prev => ({ ...prev, companyType: !prev.companyType }))}
-            className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm border border-gray-600 focus:border-blue-500 focus:outline-none flex items-center justify-between hover:bg-gray-600 transition-colors"
-          >
-            <span className="truncate">{filters.companyType.join(', ')}</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen.companyType ? 'rotate-180' : ''}`} />
-          </button>
-          
-          {dropdownOpen.companyType && (
-            <div className="absolute z-10 mt-1 w-full bg-gray-700 rounded-lg border border-gray-600 shadow-lg">
-              {['All', 'BDC', 'OMC'].map(type => (
-                <button
-                  key={type}
-                  onClick={() => toggleCompanyType(type)}
-                  className="w-full px-3 py-2 text-sm text-left hover:bg-gray-600 flex items-center justify-between transition-colors"
-                >
-                  <span className="text-white">{type}</span>
-                  {filters.companyType.includes(type) && <Check className="w-4 h-4 text-blue-400" />}
-                </button>
-              ))}
+        {/* Company Type Filter - Hide when restricted */}
+        {!restrictToCompanyType ? (
+          <div className="relative min-w-[180px]" ref={el => dropdownRefs.current.companyType = el}>
+            <label className="text-xs text-gray-400 mb-1 block">Company Type</label>
+            <button
+              onClick={() => setDropdownOpen(prev => ({ ...prev, companyType: !prev.companyType }))}
+              className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm border border-gray-600 focus:border-blue-500 focus:outline-none flex items-center justify-between hover:bg-gray-600 transition-colors"
+            >
+              <span className="truncate">{selectedBusinessTypes.length === 2 ? 'All' : selectedBusinessTypes.join(', ')}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen.companyType ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {dropdownOpen.companyType && (
+              <div className="absolute z-10 mt-1 w-full bg-gray-700 rounded-lg border border-gray-600 shadow-lg">
+                {['All', 'BDC', 'OMC'].map(type => (
+                  <button
+                    key={type}
+                    onClick={() => toggleCompanyType(type)}
+                    className="w-full px-3 py-2 text-sm text-left hover:bg-gray-600 flex items-center justify-between transition-colors"
+                  >
+                    <span className="text-white">{type}</span>
+                    {((type === 'All' && selectedBusinessTypes.length === 2) || selectedBusinessTypes.includes(type)) && <Check className="w-4 h-4 text-blue-400" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="relative min-w-[180px]">
+            <label className="text-xs text-gray-400 mb-1 block">Company Type</label>
+            <div className="w-full bg-gray-700/50 text-gray-400 rounded-lg px-3 py-2 text-sm border border-gray-600/50 cursor-not-allowed">
+              <span>{restrictToCompanyType} Only</span>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Companies Filter */}
         <div className="relative min-w-[200px]" ref={el => dropdownRefs.current.companies = el}>
@@ -528,8 +454,8 @@ export default function GlobalFilters({
             className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm border border-gray-600 focus:border-blue-500 focus:outline-none flex items-center justify-between hover:bg-gray-600 transition-colors"
           >
             <span className="truncate">
-              {filters.companies.length > 0 
-                ? `${filters.companies.length} selected` 
+              {selectedCompanies.length > 0 
+                ? `${selectedCompanies.length} selected` 
                 : 'All Companies'}
             </span>
             <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen.companies ? 'rotate-180' : ''}`} />
@@ -551,7 +477,7 @@ export default function GlobalFilters({
               </div>
               <div className="p-1">
                 <button
-                  onClick={() => setCompanies([])}
+                  onClick={() => setSelectedCompanies([])}
                   className="w-full px-3 py-2 text-sm text-left hover:bg-gray-600 text-blue-400"
                 >
                   Clear All
@@ -559,14 +485,14 @@ export default function GlobalFilters({
                 {filteredCompanies.map(company => (
                   <button
                     key={company.id}
-                    onClick={() => toggleMultiSelect(company.name, 'companies')}
+                    onClick={() => toggleMultiSelect(company.id, 'companies')}
                     className="w-full px-3 py-2 text-sm text-left hover:bg-gray-600 flex items-center justify-between transition-colors"
                   >
                     <div>
                       <span className="text-white truncate">{company.name}</span>
                       <span className="text-xs text-gray-400 ml-2">({company.type})</span>
                     </div>
-                    {filters.companies.includes(company.name) && <Check className="w-4 h-4 text-blue-400" />}
+                    {selectedCompanies.includes(company.id) && <Check className="w-4 h-4 text-blue-400" />}
                   </button>
                 ))}
               </div>
@@ -582,8 +508,8 @@ export default function GlobalFilters({
             className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm border border-gray-600 focus:border-blue-500 focus:outline-none flex items-center justify-between hover:bg-gray-600 transition-colors"
           >
             <span className="truncate">
-              {filters.products.length > 0 
-                ? `${filters.products.length} selected` 
+              {selectedProducts.length > 0 
+                ? `${selectedProducts.length} selected` 
                 : 'All Products'}
             </span>
             <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen.products ? 'rotate-180' : ''}`} />
@@ -605,7 +531,7 @@ export default function GlobalFilters({
               </div>
               <div className="p-1">
                 <button
-                  onClick={() => setProducts([])}
+                  onClick={() => setSelectedProducts([])}
                   className="w-full px-3 py-2 text-sm text-left hover:bg-gray-600 text-blue-400"
                 >
                   Clear All
@@ -613,14 +539,14 @@ export default function GlobalFilters({
                 {filteredProducts.map(product => (
                   <button
                     key={product.id}
-                    onClick={() => toggleMultiSelect(product.name, 'products')}
+                    onClick={() => toggleMultiSelect(product.id, 'products')}
                     className="w-full px-3 py-2 text-sm text-left hover:bg-gray-600 flex items-center justify-between transition-colors"
                   >
                     <div>
                       <span className="text-white truncate">{product.name}</span>
                       <span className="text-xs text-gray-400 ml-2">({product.category})</span>
                     </div>
-                    {filters.products.includes(product.name) && <Check className="w-4 h-4 text-blue-400" />}
+                    {selectedProducts.includes(product.id) && <Check className="w-4 h-4 text-blue-400" />}
                   </button>
                 ))}
               </div>
@@ -628,21 +554,13 @@ export default function GlobalFilters({
           )}
         </div>
 
-        {/* Data Quality Toggle */}
+        {/* Data Quality Toggle - Simplified for now */}
         <div className="min-w-[150px]">
           <label className="text-xs text-gray-400 mb-1 block">Data Quality</label>
           <button
-            onClick={() => setDataQuality({
-              ...dataQuality,
-              includeOutliers: !dataQuality.includeOutliers
-            })}
-            className={`px-3 py-2 rounded-lg text-sm border transition-colors ${
-              filters.dataQuality.includeOutliers 
-                ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
-                : 'bg-blue-600 border-blue-500 text-white hover:bg-blue-700'
-            }`}
+            className="px-3 py-2 rounded-lg text-sm border transition-colors bg-blue-600 border-blue-500 text-white hover:bg-blue-700"
           >
-            {filters.dataQuality.includeOutliers ? 'Include Outliers' : 'Exclude Outliers'}
+            High Quality
           </button>
         </div>
 
@@ -657,7 +575,7 @@ export default function GlobalFilters({
           </button>
           
           <button
-            onClick={clearAllFilters}
+            onClick={handleClearAllFilters}
             className="px-3 py-2 bg-red-600/20 text-red-400 rounded-lg text-sm border border-red-600/50 hover:bg-red-600/30 flex items-center gap-2 transition-colors mt-5"
           >
             <X className="w-4 h-4" />
@@ -666,90 +584,142 @@ export default function GlobalFilters({
         </div>
       </div>
 
-      {/* Advanced Filters (Collapsible) */}
+      {/* Advanced Filters (Collapsible) - Functional */}
       {showAdvanced && (
-        <div className="pt-3 border-t border-gray-700 grid grid-cols-2 md:grid-cols-4 gap-3">
-          {/* Year Filter */}
-          <div className="relative" ref={el => dropdownRefs.current.years = el}>
-            <label className="text-xs text-gray-400 mb-1 block">Years</label>
-            <button
-              onClick={() => setDropdownOpen(prev => ({ ...prev, years: !prev.years }))}
-              className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm border border-gray-600 focus:border-blue-500 focus:outline-none flex items-center justify-between hover:bg-gray-600 transition-colors"
-            >
-              <span>{filters.years.length > 0 ? `${filters.years.length} selected` : 'All Years'}</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen.years ? 'rotate-180' : ''}`} />
-            </button>
-            
-            {dropdownOpen.years && (
-              <div className="absolute z-10 mt-1 w-full bg-gray-700 rounded-lg border border-gray-600 shadow-lg max-h-60 overflow-y-auto">
-                {getYearsFromDateRange().map(year => (
-                  <button
-                    key={year}
-                    onClick={() => toggleMultiSelect(year, 'years')}
-                    className="w-full px-3 py-2 text-sm text-left hover:bg-gray-600 flex items-center justify-between transition-colors"
-                  >
-                    <span className="text-white">{year}</span>
-                    {filters.years.includes(year) && <Check className="w-4 h-4 text-blue-400" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Month Filter */}
-          <div className="relative" ref={el => dropdownRefs.current.months = el}>
-            <label className="text-xs text-gray-400 mb-1 block">Months</label>
-            <button
-              onClick={() => setDropdownOpen(prev => ({ ...prev, months: !prev.months }))}
-              className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm border border-gray-600 focus:border-blue-500 focus:outline-none flex items-center justify-between hover:bg-gray-600 transition-colors"
-            >
-              <span>{filters.months.length > 0 ? `${filters.months.length} selected` : 'All Months'}</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen.months ? 'rotate-180' : ''}`} />
-            </button>
-            
-            {dropdownOpen.months && (
-              <div className="absolute z-10 mt-1 w-full bg-gray-700 rounded-lg border border-gray-600 shadow-lg max-h-60 overflow-y-auto">
-                {MONTHS.map((month, index) => (
-                  <button
-                    key={month}
-                    onClick={() => toggleMultiSelect(index + 1, 'months')}
-                    className="w-full px-3 py-2 text-sm text-left hover:bg-gray-600 flex items-center justify-between transition-colors"
-                  >
-                    <span className="text-white">{month}</span>
-                    {filters.months.includes(index + 1) && <Check className="w-4 h-4 text-blue-400" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quality Score Slider */}
-          <div className="col-span-2">
-            <label className="text-xs text-gray-400 mb-1 block">
-              Min Quality Score: {filters.dataQuality.minQualityScore.toFixed(1)}
+        <div className="pt-3 border-t border-gray-700 space-y-4">
+          
+          {/* Company Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Select Companies (Optional)
             </label>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={filters.dataQuality.minQualityScore}
-              onChange={(e) => setDataQuality({
-                ...dataQuality,
-                minQualityScore: parseFloat(e.target.value)
-              })}
-              className="w-full accent-blue-500"
-            />
+            <div className="relative">
+              <button
+                ref={el => dropdownRefs.current.advancedCompanies = el}
+                onClick={() => setDropdownOpen(prev => ({ ...prev, advancedCompanies: !prev.advancedCompanies }))}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-left text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-between"
+              >
+                <span className="text-sm">
+                  {selectedCompanies.length === 0 
+                    ? 'All Companies' 
+                    : `${selectedCompanies.length} companies selected`}
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen.advancedCompanies ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {dropdownOpen.advancedCompanies && filterOptions && (
+                <div className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="p-2">
+                    <button
+                      onClick={() => setSelectedCompanies([])}
+                      className="w-full text-left px-2 py-1 text-sm text-gray-300 hover:bg-gray-600 rounded"
+                    >
+                      All Companies ({filterOptions.companies.length})
+                    </button>
+                  </div>
+                  <div className="border-t border-gray-600">
+                    {filterOptions.companies.map(company => (
+                      <div key={company.id} className="p-2">
+                        <label className="flex items-center space-x-2 text-sm text-gray-300 hover:bg-gray-600 px-2 py-1 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedCompanies.includes(company.id)}
+                            onChange={() => toggleMultiSelect(company.id, 'companies')}
+                            className="rounded border-gray-500 bg-gray-600 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="flex-1">
+                            {company.name}
+                            <span className="text-xs text-gray-400 ml-1">({company.type})</span>
+                          </span>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Product Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Select Products (Optional)
+            </label>
+            <div className="relative">
+              <button
+                ref={el => dropdownRefs.current.advancedProducts = el}
+                onClick={() => setDropdownOpen(prev => ({ ...prev, advancedProducts: !prev.advancedProducts }))}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-left text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-between"
+              >
+                <span className="text-sm">
+                  {selectedProducts.length === 0 
+                    ? 'All Products' 
+                    : `${selectedProducts.length} products selected`}
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen.advancedProducts ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {dropdownOpen.advancedProducts && filterOptions && (
+                <div className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="p-2">
+                    <button
+                      onClick={() => setSelectedProducts([])}
+                      className="w-full text-left px-2 py-1 text-sm text-gray-300 hover:bg-gray-600 rounded"
+                    >
+                      All Products ({filterOptions.products.length})
+                    </button>
+                  </div>
+                  <div className="border-t border-gray-600">
+                    {filterOptions.products.map(product => (
+                      <div key={product.id} className="p-2">
+                        <label className="flex items-center space-x-2 text-sm text-gray-300 hover:bg-gray-600 px-2 py-1 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedProducts.includes(product.id)}
+                            onChange={() => toggleMultiSelect(product.id, 'products')}
+                            className="rounded border-gray-500 bg-gray-600 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="flex-1">
+                            {product.name}
+                            <span className="text-xs text-gray-400 ml-1">({product.category})</span>
+                          </span>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+
+          {/* Results Limit */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Results Limit
+            </label>
+            <select
+              value={topN}
+              onChange={(e) => setTopN(parseInt(e.target.value))}
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>Top 5</option>
+              <option value={10}>Top 10</option>
+              <option value={15}>Top 15</option>
+              <option value={20}>Top 20</option>
+              <option value={25}>Top 25</option>
+              <option value={50}>Top 50</option>
+            </select>
+          </div>
+
         </div>
       )}
 
       {/* Active Filters Display */}
-      {(filters.products.length > 0 || filters.companies.length > 0 || 
-        filters.years.length > 0 || filters.months.length > 0 ||
-        filters.companyType.filter(t => t !== 'All').length > 0) && (
+      {(selectedProducts.length > 0 || selectedCompanies.length > 0 || 
+        selectedBusinessTypes.length < 2) && (
         <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-700">
-          {filters.companyType.filter(t => t !== 'All').map(type => (
+          {selectedBusinessTypes.length < 2 && selectedBusinessTypes.map(type => (
             <span key={type} className="bg-purple-600/20 text-purple-400 px-2 py-1 rounded-lg text-xs flex items-center gap-1">
               Type: {type}
               <button onClick={() => toggleCompanyType(type)}>
@@ -757,30 +727,38 @@ export default function GlobalFilters({
               </button>
             </span>
           ))}
-          {filters.companies.map(company => (
-            <span key={company} className="bg-green-600/20 text-green-400 px-2 py-1 rounded-lg text-xs flex items-center gap-1">
-              {company}
-              <button onClick={() => toggleMultiSelect(company, 'companies')}>
-                <X className="w-3 h-3" />
-              </button>
+          {selectedCompanies.slice(0, 5).map(companyId => {
+            const company = filterOptions?.companies?.find(c => c.id === companyId);
+            return company ? (
+              <span key={companyId} className="bg-green-600/20 text-green-400 px-2 py-1 rounded-lg text-xs flex items-center gap-1">
+                {company.name}
+                <button onClick={() => toggleMultiSelect(companyId, 'companies')}>
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ) : null;
+          })}
+          {selectedCompanies.length > 5 && (
+            <span className="bg-green-600/20 text-green-400 px-2 py-1 rounded-lg text-xs">
+              +{selectedCompanies.length - 5} more
             </span>
-          ))}
-          {filters.products.map(product => (
-            <span key={product} className="bg-blue-600/20 text-blue-400 px-2 py-1 rounded-lg text-xs flex items-center gap-1">
-              {product}
-              <button onClick={() => toggleMultiSelect(product, 'products')}>
-                <X className="w-3 h-3" />
-              </button>
+          )}
+          {selectedProducts.slice(0, 5).map(productId => {
+            const product = filterOptions?.products?.find(p => p.id === productId);
+            return product ? (
+              <span key={productId} className="bg-blue-600/20 text-blue-400 px-2 py-1 rounded-lg text-xs flex items-center gap-1">
+                {product.name}
+                <button onClick={() => toggleMultiSelect(productId, 'products')}>
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ) : null;
+          })}
+          {selectedProducts.length > 5 && (
+            <span className="bg-blue-600/20 text-blue-400 px-2 py-1 rounded-lg text-xs">
+              +{selectedProducts.length - 5} more
             </span>
-          ))}
-          {filters.years.map(year => (
-            <span key={year} className="bg-yellow-600/20 text-yellow-400 px-2 py-1 rounded-lg text-xs flex items-center gap-1">
-              {year}
-              <button onClick={() => toggleMultiSelect(year, 'years')}>
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
+          )}
         </div>
       )}
     </div>

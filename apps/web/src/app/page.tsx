@@ -2,21 +2,14 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/auth';
 
 export default function Home() {
   const router = useRouter();
-  const { user, token } = useAuthStore();
 
   useEffect(() => {
-    // If user is already authenticated, redirect to dashboard
-    if (user && token) {
-      router.push('/dashboard');
-    } else {
-      // If not authenticated, redirect to login
-      router.push('/login');
-    }
-  }, [user, token, router]);
+    // Skip authentication and go directly to dashboard for development
+    router.push('/dashboard/executive');
+  }, [router]);
 
   // Show loading spinner while redirecting
   return (

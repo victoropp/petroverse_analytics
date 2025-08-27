@@ -14,14 +14,8 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearError();
-    
-    try {
-      await login(email, password);
-      router.push('/dashboard');
-    } catch (err) {
-      // Error is handled in the store
-    }
+    // Skip authentication for development and go directly to dashboard
+    router.push('/dashboard/executive');
   };
 
   return (

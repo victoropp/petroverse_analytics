@@ -18,6 +18,19 @@ import numpy as np
 from enum import Enum
 import hashlib
 import secrets
+from bdc_analytics import get_bdc_comprehensive_analytics
+from omc_analytics import get_omc_comprehensive_analytics
+from advanced_analytics import (
+    get_market_concentration_metrics,
+    get_company_benchmarking,
+    get_supply_chain_efficiency,
+    get_product_dependency_risk,
+    get_seasonal_patterns_analysis,
+    get_market_dynamics_analysis,
+    get_correlation_analysis,
+    get_outlier_detection,
+    get_volume_forecast
+)
 
 # Redis imports with proper error handling
 try:
@@ -33,7 +46,7 @@ try:
 except ImportError:
     # Fallback configuration if config.py not found
     class Settings:
-        DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres123@localhost:5432/petroverse_analytics")
+        DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/petroverse_analytics")
         REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
         JWT_SECRET_KEY = os.getenv("JWT_SECRET", secrets.token_urlsafe(32))
         JWT_ALGORITHM = "HS256"
@@ -308,6 +321,44 @@ async def health_check():
         "timestamp": datetime.utcnow().isoformat(),
         "environment": settings.ENVIRONMENT if hasattr(settings, 'ENVIRONMENT') else "production"
     }
+
+@app.get("/api/v2/test/data")
+async def test_data_layer():
+    """Test endpoint to verify data layer is working - NO AUTHENTICATION"""
+    try:
+        async with db_pool.acquire() as conn:
+            # Test basic counts
+            bdc_count = await conn.fetchval("SELECT COUNT(*) FROM petroverse.bdc_data")
+            omc_count = await conn.fetchval("SELECT COUNT(*) FROM petroverse.omc_data") 
+            companies_count = await conn.fetchval("SELECT COUNT(*) FROM petroverse.companies")
+            products_count = await conn.fetchval("SELECT COUNT(*) FROM petroverse.products")
+            time_periods = await conn.fetchval("SELECT COUNT(*) FROM petroverse.time_dimension")
+            
+            # Test sample data
+            sample_bdc = await conn.fetchrow("SELECT company_name, product, volume_liters FROM petroverse.bdc_data LIMIT 1")
+            sample_omc = await conn.fetchrow("SELECT company_name, product, volume_liters FROM petroverse.omc_data LIMIT 1")
+            
+            return {
+                "status": "success",
+                "data_summary": {
+                    "bdc_records": bdc_count,
+                    "omc_records": omc_count, 
+                    "companies": companies_count,
+                    "products": products_count,
+                    "time_periods": time_periods
+                },
+                "samples": {
+                    "bdc_sample": dict(sample_bdc) if sample_bdc else None,
+                    "omc_sample": dict(sample_omc) if sample_omc else None
+                },
+                "timestamp": datetime.utcnow().isoformat()
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
 
 @app.options("/health")
 async def health_options():
@@ -854,6 +905,746 @@ async def predict_demand(request: PredictionRequest, user: UserModel = Depends(g
             "historical_data_points": len(historical)
         }
 
+# New standardized API endpoints using fact tables
+
+@app.get("/api/v2/executive/summary")
+async def get_executive_summary():
+    """Executive dashboard KPIs - NO AUTH for development"""
+    async with db_pool.acquire() as conn:
+        # Get overall metrics from fact tables
+        summary = await conn.fetchrow(
+            """
+            WITH combined_facts AS (
+                SELECT 
+                    company_id, product_id, date_id, 
+                    volume_liters, volume_mt, volume_kg,
+                    'BDC' as source_type
+                FROM petroverse.fact_bdc_transactions
+                UNION ALL
+                SELECT 
+                    company_id, product_id, date_id, 
+                    volume_liters, volume_mt, volume_kg,
+                    'OMC' as source_type 
+                FROM petroverse.fact_omc_transactions
+            )
+            SELECT 
+                COUNT(DISTINCT company_id) as total_companies,
+                COUNT(DISTINCT product_id) as total_products,
+                SUM(volume_liters) as total_volume_liters,
+                SUM(volume_mt) as total_volume_mt,
+                SUM(volume_kg) as total_volume_kg,
+                COUNT(*) as total_transactions,
+                SUM(CASE WHEN source_type = 'BDC' THEN volume_liters ELSE 0 END) as bdc_volume_liters,
+                SUM(CASE WHEN source_type = 'OMC' THEN volume_liters ELSE 0 END) as omc_volume_liters,
+                SUM(CASE WHEN source_type = 'BDC' THEN volume_mt ELSE 0 END) as bdc_volume_mt,
+                SUM(CASE WHEN source_type = 'OMC' THEN volume_mt ELSE 0 END) as omc_volume_mt,
+                SUM(CASE WHEN source_type = 'BDC' THEN volume_kg ELSE 0 END) as bdc_volume_kg,
+                SUM(CASE WHEN source_type = 'OMC' THEN volume_kg ELSE 0 END) as omc_volume_kg,
+                COUNT(DISTINCT CASE WHEN source_type = 'BDC' THEN company_id END) as bdc_companies,
+                COUNT(DISTINCT CASE WHEN source_type = 'OMC' THEN company_id END) as omc_companies
+            FROM combined_facts
+            """
+        )
+        
+        # Get recent trend (last 12 months)
+        trend = await conn.fetch(
+            """
+            WITH combined_facts AS (
+                SELECT 
+                    t.year, t.month, t.full_date,
+                    cf.volume_liters, cf.volume_mt, cf.volume_kg, cf.source_type
+                FROM (
+                    SELECT company_id, product_id, date_id, volume_liters, volume_mt, volume_kg, 'BDC' as source_type
+                    FROM petroverse.fact_bdc_transactions
+                    UNION ALL
+                    SELECT company_id, product_id, date_id, volume_liters, volume_mt, volume_kg, 'OMC' as source_type
+                    FROM petroverse.fact_omc_transactions
+                ) cf
+                JOIN petroverse.time_dimension t ON cf.date_id = t.date_id
+                WHERE t.full_date >= CURRENT_DATE - INTERVAL '12 months'
+            )
+            SELECT 
+                year, month,
+                CONCAT(year, '-', LPAD(month::text, 2, '0')) as period,
+                SUM(CASE WHEN source_type = 'BDC' THEN volume_liters ELSE 0 END) as bdc_volume_liters,
+                SUM(CASE WHEN source_type = 'OMC' THEN volume_liters ELSE 0 END) as omc_volume_liters,
+                SUM(CASE WHEN source_type = 'BDC' THEN volume_mt ELSE 0 END) as bdc_volume_mt,
+                SUM(CASE WHEN source_type = 'OMC' THEN volume_mt ELSE 0 END) as omc_volume_mt,
+                SUM(CASE WHEN source_type = 'BDC' THEN volume_kg ELSE 0 END) as bdc_volume_kg,
+                SUM(CASE WHEN source_type = 'OMC' THEN volume_kg ELSE 0 END) as omc_volume_kg,
+                SUM(volume_liters) as total_volume_liters,
+                SUM(volume_mt) as total_volume_mt,
+                SUM(volume_kg) as total_volume_kg
+            FROM combined_facts
+            GROUP BY year, month
+            ORDER BY year, month
+            """
+        )
+        
+        return {
+            "kpis": {
+                "total_companies": summary["total_companies"],
+                "total_products": summary["total_products"], 
+                "total_volume_liters": float(summary["total_volume_liters"] or 0),
+                "total_volume_mt": float(summary["total_volume_mt"] or 0),
+                "total_volume_kg": float(summary["total_volume_kg"] or 0),
+                "total_transactions": summary["total_transactions"],
+                "bdc_volume_liters": float(summary["bdc_volume_liters"] or 0),
+                "omc_volume_liters": float(summary["omc_volume_liters"] or 0),
+                "bdc_volume_mt": float(summary["bdc_volume_mt"] or 0),
+                "omc_volume_mt": float(summary["omc_volume_mt"] or 0),
+                "bdc_volume_kg": float(summary["bdc_volume_kg"] or 0),
+                "omc_volume_kg": float(summary["omc_volume_kg"] or 0),
+                "bdc_companies": summary["bdc_companies"],
+                "omc_companies": summary["omc_companies"]
+            },
+            "trend_data": [
+                {
+                    "period": row["period"],
+                    "bdc_volume_liters": float(row["bdc_volume_liters"] or 0),
+                    "omc_volume_liters": float(row["omc_volume_liters"] or 0),
+                    "bdc_volume_mt": float(row["bdc_volume_mt"] or 0),
+                    "omc_volume_mt": float(row["omc_volume_mt"] or 0),
+                    "bdc_volume_kg": float(row["bdc_volume_kg"] or 0),
+                    "omc_volume_kg": float(row["omc_volume_kg"] or 0),
+                    "total_volume_liters": float(row["total_volume_liters"] or 0),
+                    "total_volume_mt": float(row["total_volume_mt"] or 0),
+                    "total_volume_kg": float(row["total_volume_kg"] or 0)
+                } for row in trend
+            ]
+        }
+
+@app.get("/api/v2/bdc/performance")
+async def get_bdc_performance():
+    """BDC performance analytics - NO AUTH for development"""
+    async with db_pool.acquire() as conn:
+        # Top BDC companies by volume
+        top_companies = await conn.fetch(
+            """
+            SELECT 
+                c.company_name,
+                SUM(f.volume_liters) as total_volume_liters,
+                SUM(f.volume_mt) as total_volume_mt,
+                SUM(f.volume_kg) as total_volume_kg,
+                COUNT(f.transaction_id) as transaction_count,
+                ROUND(
+                    (SUM(f.volume_liters) / NULLIF(
+                        (SELECT SUM(volume_liters) FROM petroverse.fact_bdc_transactions), 0
+                    ) * 100)::numeric, 2
+                ) as market_share_percent
+            FROM petroverse.fact_bdc_transactions f
+            JOIN petroverse.companies c ON f.company_id = c.company_id
+            GROUP BY c.company_name
+            ORDER BY total_volume_liters DESC
+            LIMIT 10
+            """
+        )
+        
+        # BDC product distribution
+        product_mix = await conn.fetch(
+            """
+            SELECT 
+                p.product_name,
+                p.product_category,
+                SUM(f.volume_liters) as total_volume_liters,
+                SUM(f.volume_mt) as total_volume_mt,
+                SUM(f.volume_kg) as total_volume_kg,
+                COUNT(f.transaction_id) as transaction_count
+            FROM petroverse.fact_bdc_transactions f
+            JOIN petroverse.products p ON f.product_id = p.product_id
+            GROUP BY p.product_name, p.product_category
+            ORDER BY total_volume_liters DESC
+            """
+        )
+        
+        # Monthly performance trend
+        monthly_trend = await conn.fetch(
+            """
+            SELECT 
+                t.year, t.month,
+                CONCAT(t.year, '-', LPAD(t.month::text, 2, '0')) as period,
+                SUM(f.volume_liters) as volume_liters,
+                SUM(f.volume_mt) as volume_mt,
+                SUM(f.volume_kg) as volume_kg,
+                COUNT(f.transaction_id) as transactions
+            FROM petroverse.fact_bdc_transactions f
+            JOIN petroverse.time_dimension t ON f.date_id = t.date_id
+            GROUP BY t.year, t.month
+            ORDER BY t.year, t.month
+            """
+        )
+        
+        return {
+            "top_companies": [
+                {
+                    "company_name": row["company_name"],
+                    "total_volume_liters": float(row["total_volume_liters"] or 0),
+                    "total_volume_mt": float(row["total_volume_mt"] or 0),
+                    "total_volume_kg": float(row["total_volume_kg"] or 0),
+                    "transaction_count": row["transaction_count"],
+                    "market_share_percent": float(row["market_share_percent"] or 0)
+                } for row in top_companies
+            ],
+            "product_mix": [
+                {
+                    "product_name": row["product_name"],
+                    "product_category": row["product_category"],
+                    "total_volume_liters": float(row["total_volume_liters"] or 0),
+                    "total_volume_mt": float(row["total_volume_mt"] or 0),
+                    "total_volume_kg": float(row["total_volume_kg"] or 0),
+                    "transaction_count": row["transaction_count"]
+                } for row in product_mix
+            ],
+            "monthly_trend": [
+                {
+                    "period": row["period"],
+                    "volume_liters": float(row["volume_liters"] or 0),
+                    "volume_mt": float(row["volume_mt"] or 0),
+                    "volume_kg": float(row["volume_kg"] or 0),
+                    "transactions": row["transactions"]
+                } for row in monthly_trend
+            ]
+        }
+
+@app.get("/api/v2/bdc/comprehensive")
+async def get_bdc_comprehensive(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    company_ids: Optional[str] = None,
+    product_ids: Optional[str] = None,
+    top_n: int = 10
+):
+    """Comprehensive BDC analytics with financial and operational insights"""
+    async with db_pool.acquire() as conn:
+        # Parse filter parameters
+        company_ids_list = [int(x) for x in company_ids.split(',')] if company_ids else None
+        product_ids_list = [int(x) for x in product_ids.split(',')] if product_ids else None
+        
+        # Get comprehensive analytics
+        return await get_bdc_comprehensive_analytics(
+            conn,
+            start_date=start_date,
+            end_date=end_date,
+            company_ids=company_ids_list,
+            product_ids=product_ids_list,
+            top_n=top_n
+        )
+
+@app.get("/api/v2/omc/comprehensive")
+async def get_omc_comprehensive(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    company_ids: Optional[str] = None,
+    product_ids: Optional[str] = None,
+    top_n: int = 10
+):
+    """Comprehensive OMC analytics with financial and operational insights"""
+    async with db_pool.acquire() as conn:
+        # Parse filter parameters
+        company_ids_list = [int(x) for x in company_ids.split(',')] if company_ids else None
+        product_ids_list = [int(x) for x in product_ids.split(',')] if product_ids else None
+        
+        # Get comprehensive analytics
+        return await get_omc_comprehensive_analytics(
+            conn,
+            start_date=start_date,
+            end_date=end_date,
+            company_ids=company_ids_list,
+            product_ids=product_ids_list,
+            top_n=top_n
+        )
+
+@app.get("/api/v2/bdc/operational")
+async def get_bdc_operational_analytics(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    company_ids: Optional[str] = Query(None),
+    product_ids: Optional[str] = Query(None)
+):
+    """Get BDC operational efficiency and consistency metrics"""
+    from bdc_enhanced_analytics import get_bdc_operational_metrics
+    
+    # Parse comma-separated IDs
+    company_ids_list = [int(id) for id in company_ids.split(',')] if company_ids else None
+    product_ids_list = [int(id) for id in product_ids.split(',')] if product_ids else None
+    
+    async with db_pool.acquire() as conn:
+        return await get_bdc_operational_metrics(
+            conn,
+            start_date=start_date,
+            end_date=end_date,
+            company_ids=company_ids_list,
+            product_ids=product_ids_list
+        )
+
+@app.get("/api/v2/bdc/growth")
+async def get_bdc_growth_analytics(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    company_ids: Optional[str] = Query(None),
+    product_ids: Optional[str] = Query(None)
+):
+    """Get BDC growth trends and analytics"""
+    from bdc_enhanced_analytics import get_bdc_growth_analytics
+    
+    # Parse comma-separated IDs
+    company_ids_list = [int(id) for id in company_ids.split(',')] if company_ids else None
+    product_ids_list = [int(id) for id in product_ids.split(',')] if product_ids else None
+    
+    async with db_pool.acquire() as conn:
+        return await get_bdc_growth_analytics(
+            conn,
+            start_date=start_date,
+            end_date=end_date,
+            company_ids=company_ids_list,
+            product_ids=product_ids_list
+        )
+
+@app.get("/api/v2/bdc/network")
+async def get_bdc_network_analytics(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    company_ids: Optional[str] = Query(None),
+    product_ids: Optional[str] = Query(None)
+):
+    """Get BDC network and relationship analytics"""
+    from bdc_enhanced_analytics import get_bdc_network_analytics
+    
+    # Parse comma-separated IDs
+    company_ids_list = [int(id) for id in company_ids.split(',')] if company_ids else None
+    product_ids_list = [int(id) for id in product_ids.split(',')] if product_ids else None
+    
+    async with db_pool.acquire() as conn:
+        return await get_bdc_network_analytics(
+            conn,
+            start_date=start_date,
+            end_date=end_date,
+            company_ids=company_ids_list,
+            product_ids=product_ids_list
+        )
+
+@app.get("/api/v2/omc/performance")
+async def get_omc_performance():
+    """OMC performance analytics - NO AUTH for development"""
+    async with db_pool.acquire() as conn:
+        # Top OMC companies by volume
+        top_companies = await conn.fetch(
+            """
+            SELECT 
+                c.company_name,
+                SUM(f.volume_liters) as total_volume_liters,
+                SUM(f.volume_mt) as total_volume_mt,
+                SUM(f.volume_kg) as total_volume_kg,
+                COUNT(f.transaction_id) as transaction_count,
+                ROUND(
+                    (SUM(f.volume_liters) / NULLIF(
+                        (SELECT SUM(volume_liters) FROM petroverse.fact_omc_transactions), 0
+                    ) * 100)::numeric, 2
+                ) as market_share_percent
+            FROM petroverse.fact_omc_transactions f
+            JOIN petroverse.companies c ON f.company_id = c.company_id
+            GROUP BY c.company_name
+            ORDER BY total_volume_liters DESC
+            LIMIT 10
+            """
+        )
+        
+        # OMC product distribution
+        product_mix = await conn.fetch(
+            """
+            SELECT 
+                p.product_name,
+                p.product_category,
+                SUM(f.volume_liters) as total_volume_liters,
+                SUM(f.volume_mt) as total_volume_mt,
+                SUM(f.volume_kg) as total_volume_kg,
+                COUNT(f.transaction_id) as transaction_count
+            FROM petroverse.fact_omc_transactions f
+            JOIN petroverse.products p ON f.product_id = p.product_id
+            GROUP BY p.product_name, p.product_category
+            ORDER BY total_volume_liters DESC
+            """
+        )
+        
+        # Monthly performance trend
+        monthly_trend = await conn.fetch(
+            """
+            SELECT 
+                t.year, t.month,
+                CONCAT(t.year, '-', LPAD(t.month::text, 2, '0')) as period,
+                SUM(f.volume_liters) as volume_liters,
+                SUM(f.volume_mt) as volume_mt,
+                SUM(f.volume_kg) as volume_kg,
+                COUNT(f.transaction_id) as transactions
+            FROM petroverse.fact_omc_transactions f
+            JOIN petroverse.time_dimension t ON f.date_id = t.date_id
+            GROUP BY t.year, t.month
+            ORDER BY t.year, t.month
+            """
+        )
+        
+        return {
+            "top_companies": [
+                {
+                    "company_name": row["company_name"],
+                    "total_volume_liters": float(row["total_volume_liters"] or 0),
+                    "total_volume_mt": float(row["total_volume_mt"] or 0),
+                    "total_volume_kg": float(row["total_volume_kg"] or 0),
+                    "transaction_count": row["transaction_count"],
+                    "market_share_percent": float(row["market_share_percent"] or 0)
+                } for row in top_companies
+            ],
+            "product_mix": [
+                {
+                    "product_name": row["product_name"],
+                    "product_category": row["product_category"],
+                    "total_volume_liters": float(row["total_volume_liters"] or 0),
+                    "total_volume_mt": float(row["total_volume_mt"] or 0),
+                    "total_volume_kg": float(row["total_volume_kg"] or 0),
+                    "transaction_count": row["transaction_count"]
+                } for row in product_mix
+            ],
+            "monthly_trend": [
+                {
+                    "period": row["period"],
+                    "volume_liters": float(row["volume_liters"] or 0),
+                    "volume_mt": float(row["volume_mt"] or 0),
+                    "volume_kg": float(row["volume_kg"] or 0),
+                    "transactions": row["transactions"]
+                } for row in monthly_trend
+            ]
+        }
+
+@app.get("/api/v2/products/analysis")
+async def get_products_analysis():
+    """Product analytics - NO AUTH for development"""
+    async with db_pool.acquire() as conn:
+        # Overall product performance
+        product_performance = await conn.fetch(
+            """
+            WITH combined_facts AS (
+                SELECT product_id, volume_liters, volume_mt, volume_kg, 'BDC' as source
+                FROM petroverse.fact_bdc_transactions
+                UNION ALL
+                SELECT product_id, volume_liters, volume_mt, volume_kg, 'OMC' as source
+                FROM petroverse.fact_omc_transactions
+            )
+            SELECT 
+                p.product_name,
+                p.product_category,
+                SUM(cf.volume_liters) as total_volume_liters,
+                SUM(cf.volume_mt) as total_volume_mt,
+                SUM(cf.volume_kg) as total_volume_kg,
+                COUNT(*) as total_transactions,
+                SUM(CASE WHEN cf.source = 'BDC' THEN cf.volume_liters ELSE 0 END) as bdc_volume_liters,
+                SUM(CASE WHEN cf.source = 'OMC' THEN cf.volume_liters ELSE 0 END) as omc_volume_liters,
+                SUM(CASE WHEN cf.source = 'BDC' THEN cf.volume_mt ELSE 0 END) as bdc_volume_mt,
+                SUM(CASE WHEN cf.source = 'OMC' THEN cf.volume_mt ELSE 0 END) as omc_volume_mt,
+                SUM(CASE WHEN cf.source = 'BDC' THEN cf.volume_kg ELSE 0 END) as bdc_volume_kg,
+                SUM(CASE WHEN cf.source = 'OMC' THEN cf.volume_kg ELSE 0 END) as omc_volume_kg,
+                ROUND(
+                    (SUM(cf.volume_liters) / NULLIF(
+                        (SELECT SUM(volume_liters) FROM combined_facts), 0
+                    ) * 100)::numeric, 2
+                ) as market_share_percent
+            FROM combined_facts cf
+            JOIN petroverse.products p ON cf.product_id = p.product_id
+            GROUP BY p.product_name, p.product_category
+            ORDER BY total_volume_liters DESC
+            """
+        )
+        
+        # Product trends over time
+        product_trends = await conn.fetch(
+            """
+            WITH combined_facts AS (
+                SELECT product_id, date_id, volume_liters, volume_mt, volume_kg
+                FROM petroverse.fact_bdc_transactions
+                UNION ALL
+                SELECT product_id, date_id, volume_liters, volume_mt, volume_kg
+                FROM petroverse.fact_omc_transactions
+            )
+            SELECT 
+                p.product_name,
+                t.year, t.month,
+                CONCAT(t.year, '-', LPAD(t.month::text, 2, '0')) as period,
+                SUM(cf.volume_liters) as volume_liters,
+                SUM(cf.volume_mt) as volume_mt,
+                SUM(cf.volume_kg) as volume_kg
+            FROM combined_facts cf
+            JOIN petroverse.products p ON cf.product_id = p.product_id
+            JOIN petroverse.time_dimension t ON cf.date_id = t.date_id
+            GROUP BY p.product_name, t.year, t.month
+            ORDER BY p.product_name, t.year, t.month
+            """
+        )
+        
+        return {
+            "product_performance": [
+                {
+                    "product_name": row["product_name"],
+                    "product_category": row["product_category"],
+                    "total_volume_liters": float(row["total_volume_liters"] or 0),
+                    "total_volume_mt": float(row["total_volume_mt"] or 0),
+                    "total_volume_kg": float(row["total_volume_kg"] or 0),
+                    "total_transactions": row["total_transactions"],
+                    "bdc_volume_liters": float(row["bdc_volume_liters"] or 0),
+                    "omc_volume_liters": float(row["omc_volume_liters"] or 0),
+                    "bdc_volume_mt": float(row["bdc_volume_mt"] or 0),
+                    "omc_volume_mt": float(row["omc_volume_mt"] or 0),
+                    "bdc_volume_kg": float(row["bdc_volume_kg"] or 0),
+                    "omc_volume_kg": float(row["omc_volume_kg"] or 0),
+                    "market_share_percent": float(row["market_share_percent"] or 0)
+                } for row in product_performance
+            ],
+            "product_trends": [
+                {
+                    "product_name": row["product_name"],
+                    "period": row["period"],
+                    "volume_liters": float(row["volume_liters"] or 0),
+                    "volume_mt": float(row["volume_mt"] or 0),
+                    "volume_kg": float(row["volume_kg"] or 0)
+                } for row in product_trends
+            ]
+        }
+
+@app.get("/api/v2/filters")
+async def get_filters():
+    """Get filter options - NO AUTH for development"""
+    async with db_pool.acquire() as conn:
+        # Get companies
+        companies = await conn.fetch(
+            "SELECT company_id, company_name, company_type FROM petroverse.companies ORDER BY company_name"
+        )
+        
+        # Get products
+        products = await conn.fetch(
+            "SELECT product_id, product_name, product_category FROM petroverse.products ORDER BY product_name"
+        )
+        
+        # Get date range
+        date_range = await conn.fetchrow(
+            """
+            SELECT 
+                MIN(full_date) as min_date,
+                MAX(full_date) as max_date
+            FROM petroverse.time_dimension
+            """
+        )
+        
+        return {
+            "companies": [
+                {
+                    "id": row["company_id"],
+                    "name": row["company_name"],
+                    "type": row["company_type"]
+                } for row in companies
+            ],
+            "products": [
+                {
+                    "id": row["product_id"],
+                    "name": row["product_name"],
+                    "category": row["product_category"]
+                } for row in products
+            ],
+            "date_range": {
+                "min_date": date_range["min_date"].isoformat() if date_range["min_date"] else None,
+                "max_date": date_range["max_date"].isoformat() if date_range["max_date"] else None
+            }
+        }
+
+# Industry analytics filtered endpoints
+@app.get("/api/v2/executive/summary/filtered")
+async def get_executive_summary_filtered(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    company_ids: Optional[str] = None,  # comma-separated
+    product_ids: Optional[str] = None,  # comma-separated
+    business_types: Optional[str] = None,  # comma-separated: BDC,OMC
+    top_n: int = 10
+):
+    """Filtered executive dashboard with industry analytics"""
+    from datetime import datetime
+    
+    async with db_pool.acquire() as conn:
+        # Build WHERE clauses
+        where_conditions = ["1=1"]  # Base condition
+        params = []
+        param_count = 0
+        
+        # Date filtering - convert strings to date objects
+        if start_date:
+            param_count += 1
+            where_conditions.append(f"t.full_date >= ${param_count}")
+            params.append(datetime.strptime(start_date, '%Y-%m-%d').date())
+        if end_date:
+            param_count += 1
+            where_conditions.append(f"t.full_date <= ${param_count}")
+            params.append(datetime.strptime(end_date, '%Y-%m-%d').date())
+            
+        # Company filtering
+        if company_ids:
+            company_list = [int(x.strip()) for x in company_ids.split(',')]
+            param_count += 1
+            where_conditions.append(f"c.company_id = ANY(${param_count}::integer[])")
+            params.append(company_list)
+            
+        # Product filtering  
+        if product_ids:
+            product_list = [int(x.strip()) for x in product_ids.split(',')]
+            param_count += 1
+            where_conditions.append(f"p.product_id = ANY(${param_count}::integer[])")
+            params.append(product_list)
+            
+        # Business type filtering (BDC vs OMC)
+        business_filter = ""
+        if business_types and business_types != "BDC,OMC":
+            types = [x.strip() for x in business_types.split(',')]
+            param_count += 1
+            business_filter = f"AND c.company_type = ANY(${param_count}::text[])"
+            params.append(types)
+            
+        where_clause = " AND ".join(where_conditions) + business_filter
+        
+        # Industry metrics (BDC vs OMC)
+        summary_query = f"""
+        WITH bdc_data AS (
+            SELECT 
+                c.company_id, c.company_name, c.company_type,
+                p.product_id, p.product_name, p.product_category,
+                t.date_id, t.full_date, t.year, t.month,
+                f.volume_liters, f.volume_mt, f.volume_kg,
+                'BDC' as business_type
+            FROM petroverse.fact_bdc_transactions f
+            JOIN petroverse.companies c ON f.company_id = c.company_id
+            JOIN petroverse.products p ON f.product_id = p.product_id
+            JOIN petroverse.time_dimension t ON f.date_id = t.date_id
+            WHERE {where_clause}
+        ),
+        omc_data AS (
+            SELECT 
+                c.company_id, c.company_name, c.company_type,
+                p.product_id, p.product_name, p.product_category,
+                t.date_id, t.full_date, t.year, t.month,
+                f.volume_liters, f.volume_mt, f.volume_kg,
+                'OMC' as business_type
+            FROM petroverse.fact_omc_transactions f
+            JOIN petroverse.companies c ON f.company_id = c.company_id
+            JOIN petroverse.products p ON f.product_id = p.product_id
+            JOIN petroverse.time_dimension t ON f.date_id = t.date_id
+            WHERE {where_clause}
+        ),
+        combined_data AS (
+            SELECT * FROM bdc_data
+            UNION ALL
+            SELECT * FROM omc_data
+        )
+        SELECT 
+            -- Overall metrics
+            COUNT(DISTINCT company_id) as total_companies,
+            COUNT(DISTINCT product_id) as total_products,
+            SUM(volume_liters) as total_volume_liters,
+            SUM(volume_mt) as total_volume_mt,
+            SUM(volume_kg) as total_volume_kg,
+            COUNT(*) as total_transactions,
+            
+            -- Business type breakdown
+            SUM(CASE WHEN business_type = 'BDC' THEN volume_liters ELSE 0 END) as bdc_volume_liters,
+            SUM(CASE WHEN business_type = 'OMC' THEN volume_liters ELSE 0 END) as omc_volume_liters,
+            SUM(CASE WHEN business_type = 'BDC' THEN volume_mt ELSE 0 END) as bdc_volume_mt,
+            SUM(CASE WHEN business_type = 'OMC' THEN volume_mt ELSE 0 END) as omc_volume_mt,
+            COUNT(DISTINCT CASE WHEN business_type = 'BDC' THEN company_id END) as bdc_companies,
+            COUNT(DISTINCT CASE WHEN business_type = 'OMC' THEN company_id END) as omc_companies,
+            
+            -- Industry distribution ratio
+            CASE 
+                WHEN SUM(volume_liters) > 0 
+                THEN SUM(CASE WHEN business_type = 'BDC' THEN volume_liters ELSE 0 END) / 
+                     SUM(volume_liters) * 100
+                ELSE 0 
+            END as bdc_market_share
+        FROM combined_data
+        """
+        
+        summary = await conn.fetchrow(summary_query, *params)
+        
+        # Monthly industry trends (BDC vs OMC)
+        trend_query = f"""
+        WITH monthly_flow AS (
+            SELECT 
+                t.year, t.month,
+                CONCAT(t.year, '-', LPAD(t.month::text, 2, '0')) as period,
+                SUM(CASE WHEN c.company_type = 'BDC' THEN f.volume_liters ELSE 0 END) as bdc_volume,
+                SUM(CASE WHEN c.company_type = 'OMC' THEN f.volume_liters ELSE 0 END) as omc_volume,
+                SUM(CASE WHEN c.company_type = 'BDC' THEN f.volume_mt ELSE 0 END) as bdc_volume_mt,
+                SUM(CASE WHEN c.company_type = 'OMC' THEN f.volume_mt ELSE 0 END) as omc_volume_mt
+            FROM (
+                SELECT company_id, product_id, date_id, volume_liters, volume_mt FROM petroverse.fact_bdc_transactions
+                UNION ALL
+                SELECT company_id, product_id, date_id, volume_liters, volume_mt FROM petroverse.fact_omc_transactions
+            ) f
+            JOIN petroverse.companies c ON f.company_id = c.company_id
+            JOIN petroverse.products p ON f.product_id = p.product_id
+            JOIN petroverse.time_dimension t ON f.date_id = t.date_id
+            WHERE {where_clause}
+            GROUP BY t.year, t.month
+            ORDER BY t.year, t.month
+        )
+        SELECT 
+            *,
+            CASE WHEN (bdc_volume + omc_volume) > 0 
+                THEN bdc_volume / (bdc_volume + omc_volume) * 100 
+                ELSE 0 
+            END as bdc_share_percentage
+        FROM monthly_flow
+        """
+        
+        trends = await conn.fetch(trend_query, *params)
+        
+        return {
+            "kpis": {
+                "total_companies": summary["total_companies"] or 0,
+                "total_products": summary["total_products"] or 0,
+                "total_volume_liters": float(summary["total_volume_liters"] or 0),
+                "total_volume_mt": float(summary["total_volume_mt"] or 0),
+                "total_volume_kg": float(summary["total_volume_kg"] or 0),
+                "total_transactions": summary["total_transactions"] or 0,
+                
+                # Industry metrics
+                "bdc_volume_liters": float(summary["bdc_volume_liters"] or 0),
+                "omc_volume_liters": float(summary["omc_volume_liters"] or 0),
+                "bdc_volume_mt": float(summary["bdc_volume_mt"] or 0),
+                "omc_volume_mt": float(summary["omc_volume_mt"] or 0),
+                "bdc_companies": summary["bdc_companies"] or 0,
+                "omc_companies": summary["omc_companies"] or 0,
+                "bdc_market_share": float(summary["bdc_market_share"] or 0),
+                
+                # Industry analytics indicators
+                "bdc_to_omc_ratio": float(summary["bdc_volume_liters"] / max(summary["omc_volume_liters"], 1) if summary["bdc_volume_liters"] and summary["omc_volume_liters"] else 0),
+                "avg_bdc_company_volume": float(summary["bdc_volume_liters"] / max(summary["bdc_companies"], 1) if summary["bdc_volume_liters"] and summary["bdc_companies"] else 0),
+                "avg_omc_company_volume": float(summary["omc_volume_liters"] / max(summary["omc_companies"], 1) if summary["omc_volume_liters"] and summary["omc_companies"] else 0)
+            },
+            "industry_trends": [
+                {
+                    "period": row["period"],
+                    "bdc_volume_liters": float(row["bdc_volume"] or 0),
+                    "omc_volume_liters": float(row["omc_volume"] or 0),
+                    "bdc_volume_mt": float(row["bdc_volume_mt"] or 0),
+                    "omc_volume_mt": float(row["omc_volume_mt"] or 0),
+                    "bdc_share_percentage": float(row["bdc_share_percentage"] or 0),
+                    "total_volume": float((row["bdc_volume"] or 0) + (row["omc_volume"] or 0))
+                } for row in trends
+            ],
+            "filters_applied": {
+                "start_date": start_date,
+                "end_date": end_date,
+                "company_count": len(company_ids.split(',')) if company_ids else 0,
+                "product_count": len(product_ids.split(',')) if product_ids else 0,
+                "business_types": business_types.split(',') if business_types else ['BDC', 'OMC'],
+                "industry_view": not business_types or business_types == "BDC,OMC"
+            }
+        }
+
 @app.get("/api/v2/executive/overview")
 async def get_executive_overview(user: UserModel = Depends(get_current_user)):
     """Get executive dashboard overview data from real database"""
@@ -868,8 +1659,8 @@ async def get_executive_overview(user: UserModel = Depends(get_current_user)):
                 COUNT(DISTINCT CASE WHEN c.company_type = 'BDC' THEN c.company_id END) as bdc_count,
                 COUNT(DISTINCT CASE WHEN c.company_type = 'OMC' THEN c.company_id END) as omc_count
             FROM petroverse.companies c
-            LEFT JOIN petroverse.bdc_performance_metrics b ON c.company_id = b.company_id
-            LEFT JOIN petroverse.omc_performance_metrics o ON c.company_id = o.company_id
+            LEFT JOIN petroverse.fact_bdc_transactions b ON c.company_id = b.company_id
+            LEFT JOIN petroverse.fact_omc_transactions o ON c.company_id = o.company_id
             LEFT JOIN petroverse.time_dimension t ON COALESCE(b.date_id, o.date_id) = t.date_id
             WHERE t.year = EXTRACT(YEAR FROM CURRENT_DATE) 
                 AND t.month = EXTRACT(MONTH FROM CURRENT_DATE)
@@ -1113,6 +1904,189 @@ async def get_executive_filtered_data(
                 for row in top_companies
             ]
         }
+
+# Advanced Analytics Endpoints
+@app.get("/api/v2/analytics/market-concentration")
+async def get_market_concentration(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    business_type: Optional[str] = None
+):
+    """Get market concentration metrics including HHI and KPIs"""
+    async with db_pool.acquire() as conn:
+        return await get_market_concentration_metrics(
+            conn, start_date, end_date
+        )
+
+@app.get("/api/v2/analytics/company-benchmarking")
+async def get_company_benchmarking_general(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    business_type: Optional[str] = None,
+    top_n: Optional[int] = 10
+):
+    """Get general company benchmarking analysis"""
+    async with db_pool.acquire() as conn:
+        # Get top companies directly from database
+        if business_type == "OMC":
+            company_table = "petroverse.fact_omc_transactions"
+        else:
+            company_table = "petroverse.fact_bdc_transactions"
+        
+        # Get top companies by volume
+        top_companies = await conn.fetch(f"""
+            SELECT 
+                c.company_name,
+                c.company_type,
+                SUM(f.volume_mt) as total_volume_mt,
+                SUM(f.volume_liters) as total_volume_liters,
+                COUNT(f.transaction_id) as total_transactions,
+                COUNT(DISTINCT f.product_id) as unique_products,
+                AVG(f.volume_mt) as avg_transaction_size,
+                0 as market_share,
+                ROW_NUMBER() OVER (ORDER BY SUM(f.volume_mt) DESC) as volume_rank,
+                0 as transaction_rank,
+                0 as efficiency_score
+            FROM petroverse.companies c
+            JOIN {company_table} f ON c.company_id = f.company_id
+            GROUP BY c.company_id, c.company_name, c.company_type
+            ORDER BY total_volume_mt DESC
+            LIMIT {top_n or 20}
+        """)
+        
+        # Calculate market shares
+        total_market_volume = sum(row['total_volume_mt'] for row in top_companies)
+        companies_with_shares = []
+        
+        for row in top_companies:
+            market_share = (row['total_volume_mt'] / total_market_volume * 100) if total_market_volume > 0 else 0
+            companies_with_shares.append({
+                "company_name": row['company_name'],
+                "company_type": row['company_type'],
+                "total_volume_mt": float(row['total_volume_mt'] or 0),
+                "total_volume_liters": float(row['total_volume_liters'] or 0),
+                "total_transactions": row['total_transactions'],
+                "unique_products": row['unique_products'],
+                "avg_transaction_size": float(row['avg_transaction_size'] or 0),
+                "market_share": round(market_share, 2),
+                "volume_rank": row['volume_rank'],
+                "transaction_rank": row['volume_rank'],  # Use same ranking
+                "efficiency_score": round(market_share * 10, 1)  # Simple efficiency metric
+            })
+        
+        # Calculate market concentration metrics
+        hhi_index = sum(pow(company['market_share'], 2) for company in companies_with_shares)
+        top_5_share = sum(company['market_share'] for company in companies_with_shares[:5])
+        
+        return {
+            "companies": companies_with_shares,
+            "benchmarks": [],
+            "market_metrics": {
+                "herfindahl_index": round(hhi_index, 2),
+                "top_5_share": round(top_5_share, 2),
+                "top_10_share": round(sum(company['market_share'] for company in companies_with_shares[:10]), 2)
+            }
+        }
+
+@app.get("/api/v2/analytics/company-benchmarking/{company_id}")
+async def get_company_benchmark(
+    company_id: int,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Get company benchmarking analysis"""
+    async with db_pool.acquire() as conn:
+        return await get_company_benchmarking(
+            conn, company_id, start_date, end_date
+        )
+
+@app.get("/api/v2/analytics/supply-chain-efficiency")
+async def get_supply_chain(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    company_ids: Optional[str] = None
+):
+    """Get supply chain efficiency metrics"""
+    company_list = [int(x) for x in company_ids.split(",")] if company_ids else None
+    async with db_pool.acquire() as conn:
+        return await get_supply_chain_efficiency(
+            conn, start_date, end_date, company_list
+        )
+
+@app.get("/api/v2/analytics/product-dependency-risk")
+async def get_product_risk(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Get product dependency and risk analysis"""
+    async with db_pool.acquire() as conn:
+        return await get_product_dependency_risk(
+            conn, start_date, end_date
+        )
+
+@app.get("/api/v2/analytics/seasonal-patterns")
+async def get_seasonal_analysis(
+    product_ids: Optional[str] = None,
+    company_ids: Optional[str] = None
+):
+    """Get seasonal patterns analysis"""
+    product_list = [int(x) for x in product_ids.split(",")] if product_ids else None
+    company_list = [int(x) for x in company_ids.split(",")] if company_ids else None
+    async with db_pool.acquire() as conn:
+        return await get_seasonal_patterns_analysis(
+            conn, product_list, company_list
+        )
+
+@app.get("/api/v2/analytics/market-dynamics")
+async def get_market_dynamics(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    business_type: Optional[str] = None
+):
+    """Get market dynamics including entry/exit and growth metrics"""
+    async with db_pool.acquire() as conn:
+        return await get_market_dynamics_analysis(
+            conn, start_date, end_date
+        )
+
+@app.get("/api/v2/analytics/correlation-analysis")
+async def get_correlations(
+    metric_x: str = "volume",
+    metric_y: str = "transactions",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    business_type: Optional[str] = None
+):
+    """Get correlation analysis between different metrics"""
+    async with db_pool.acquire() as conn:
+        return await get_correlation_analysis(
+            conn, start_date, end_date
+        )
+
+@app.get("/api/v2/analytics/outlier-detection")
+async def get_outliers(
+    metric: str = "volume",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    threshold: float = 2.0
+):
+    """Detect outliers in the data"""
+    async with db_pool.acquire() as conn:
+        return await get_outlier_detection(
+            conn, start_date, end_date
+        )
+
+@app.get("/api/v2/analytics/volume-forecast")
+async def get_forecast(
+    periods: int = 6,
+    product_id: Optional[int] = None,
+    company_id: Optional[int] = None
+):
+    """Get volume forecast for future periods"""
+    async with db_pool.acquire() as conn:
+        return await get_volume_forecast(
+            conn, product_id, company_id, periods
+        )
 
 @app.websocket("/ws/analytics/{tenant_id}")
 async def websocket_analytics(websocket: WebSocket, tenant_id: str):

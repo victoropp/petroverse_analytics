@@ -1,567 +1,841 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import {
-  Package,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  BarChart3,
-  Activity,
-  Filter,
-  Download,
-  Calendar,
-  ChevronDown,
-  Truck,
-  Fuel,
-  Target,
-  Award
+import { useState, useEffect, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ExpandableChart } from '@/components/ui/expandable-chart';
+import GlobalFilters from '@/components/filters/GlobalFilters';
+import { useGlobalFilters } from '@/lib/global-filters';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  ScatterChart, Scatter, ZAxis, Treemap, Sankey, Layer,
+  ComposedChart, Legend
+} from 'recharts';
+import { 
+  TrendingUp, TrendingDown, Activity, BarChart3, Package, 
+  Users, Calendar, Award, AlertCircle, Info, Target,
+  Zap, Shield, Network, Clock, Gauge
 } from 'lucide-react';
-import { analyticsAPI, filterAPI } from '@/lib/api';
-import { Line, Bar, Radar, Scatter } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  RadialLinearScale,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js';
 
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  RadialLinearScale,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+// Interfaces for API responses
+interface Company {
+  company_name: string;
+  total_volume_liters: number;
+  total_volume_mt: number;
+  total_volume_kg: number;
+  transaction_count: number;
+  market_share_percent: number;
+}
 
-// BDC-specific KPI Card
-const BDCKPICard = ({ title, value, subtitle, change, icon: Icon, gradient }: any) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02 }}
-      className="bg-gray-800 rounded-xl p-6 border border-gray-700 relative overflow-hidden"
-    >
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-5`} />
-      <div className="relative">
-        <div className="flex items-center justify-between mb-4">
-          <div className={`p-3 rounded-lg bg-gradient-to-r ${gradient}`}>
-            <Icon className="w-6 h-6 text-white" />
-          </div>
-          {change !== undefined && (
-            <div className={`flex items-center space-x-1 text-sm ${
-              change > 0 ? 'text-green-400' : change < 0 ? 'text-red-400' : 'text-gray-400'
-            }`}>
-              {change > 0 ? <TrendingUp className="w-4 h-4" /> : 
-               change < 0 ? <TrendingDown className="w-4 h-4" /> : null}
-              <span>{change > 0 ? '+' : ''}{change}%</span>
-            </div>
-          )}
-        </div>
-        <div>
-          <p className="text-gray-400 text-sm mb-1">{title}</p>
-          <p className="text-2xl font-bold text-white">{value}</p>
-          {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
-        </div>
-      </div>
-    </motion.div>
-  );
+interface Product {
+  product_name: string;
+  product_category: string;
+  total_volume_liters: number;
+  total_volume_mt: number;
+  total_volume_kg: number;
+  transaction_count: number;
+}
+
+interface TrendData {
+  period: string;
+  volume_liters: number;
+  volume_mt: number;
+  volume_kg: number;
+  transactions: number;
+}
+
+interface OperationalMetrics {
+  company_name: string;
+  active_months: number;
+  products_handled: number;
+  total_transactions: number;
+  total_volume_mt: number;
+  total_volume_liters: number;
+  consistency_score: number;
+  monthly_avg_volume: number;
+  monthly_avg_transactions: number;
+  avg_quality_score: number;
+  volume_rank: number;
+  consistency_rank: number;
+  diversity_rank: number;
+}
+
+interface ProductFlow {
+  product_name: string;
+  product_category: string;
+  unique_suppliers: number;
+  active_days: number;
+  total_transactions: number;
+  total_volume_mt: number;
+  total_volume_liters: number;
+  avg_transaction_size_mt: number;
+  median_transaction_mt: number;
+  coefficient_variation: number;
+  daily_throughput_mt: number;
+  volume_rank: number;
+}
+
+interface TemporalPattern {
+  weekday: string;
+  day_number: number;
+  avg_volume_mt: number;
+  avg_transactions: number;
+  avg_companies: number;
+  sample_size: number;
+}
+
+interface QualityMetrics {
+  total_records: number;
+  avg_quality_score: number;
+  min_quality_score: number;
+  max_quality_score: number;
+  quality_stddev: number;
+  high_quality_count: number;
+  medium_quality_count: number;
+  low_quality_count: number;
+  outlier_count: number;
+  normal_count: number;
+}
+
+interface MarketDynamics {
+  year: number;
+  month: number;
+  active_companies: number;
+  hhi_index: number;
+  top_share: number;
+  median_company_volume: number;
+  market_structure: string;
+}
+
+interface GrowthData {
+  year?: number;
+  quarter?: number;
+  companies: number;
+  products: number;
+  transactions: number;
+  volume_mt: number;
+  volume_liters: number;
+  yoy_growth_rate?: number;
+  qoq_growth_rate?: number;
+}
+
+interface CompanyGrowth {
+  company_name: string;
+  avg_mom_growth: number;
+  avg_yoy_growth: number;
+  total_volume: number;
+  data_points: number;
+  growth_rank: number;
+}
+
+// Color palettes
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
+const GRADIENT_COLORS = {
+  blue: ['#60A5FA', '#3B82F6', '#2563EB'],
+  green: ['#34D399', '#10B981', '#059669'],
+  yellow: ['#FCD34D', '#F59E0B', '#D97706'],
+  red: ['#F87171', '#EF4444', '#DC2626'],
+  purple: ['#A78BFA', '#8B5CF6', '#7C3AED']
 };
 
-export default function BDCDashboard() {
+// Helper functions
+function formatNumber(num: number | null | undefined): string {
+  if (num === null || num === undefined) return '0';
+  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
+  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
+  if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
+  return num.toFixed(2);
+}
+
+function formatVolume(value: number, unit: 'liters' | 'mt'): string {
+  return `${formatNumber(value)} ${unit === 'mt' ? 'MT' : 'L'}`;
+}
+
+function getPerformanceColor(value: number, thresholds: { good: number; warning: number }): string {
+  if (value >= thresholds.good) return '#10B981';
+  if (value >= thresholds.warning) return '#F59E0B';
+  return '#EF4444';
+}
+
+export default function EnhancedBDCDashboard() {
+  // State management
+  const [performanceData, setPerformanceData] = useState<any>(null);
+  const [operationalData, setOperationalData] = useState<any>(null);
+  const [growthData, setGrowthData] = useState<any>(null);
+  const [networkData, setNetworkData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedCompany, setSelectedCompany] = useState<string>('all');
-  const [selectedProduct, setSelectedProduct] = useState<string>('all');
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   
-  // Dashboard data states
-  const [kpis, setKpis] = useState({
-    totalBDCs: 82,
-    totalVolume: 0,
-    avgPerformance: 0,
-    marketShare: 0,
-    topPerformer: '',
-    growthRate: 0
-  });
-  const [performanceTrend, setPerformanceTrend] = useState<any>(null);
-  const [companyRankings, setCompanyRankings] = useState<any[]>([]);
-  const [productDistribution, setProductDistribution] = useState<any>(null);
-  const [efficiencyMetrics, setEfficiencyMetrics] = useState<any>(null);
+  // Global filters
+  const { 
+    getFilterParams, 
+    startDate, 
+    endDate, 
+    selectedCompanies, 
+    selectedProducts, 
+    topN,
+    volumeUnit 
+  } = useGlobalFilters();
 
+  // Fetch all data
   useEffect(() => {
-    fetchDateRange();
-    fetchFilterOptions();
-  }, []);
-
-  useEffect(() => {
-    if (dateRange.start && dateRange.end) {
-      fetchBDCData();
-    }
-  }, [selectedCompany, selectedProduct, dateRange]);
-
-  const fetchDateRange = async () => {
-    try {
-      const response = await analyticsAPI.getDateRange();
-      setDateRange({
-        start: response.min_date,
-        end: response.max_date
-      });
-    } catch (err) {
-      console.error('Date range fetch error:', err);
-      // Fallback to reasonable defaults
-      setDateRange({
-        start: '2019-01-01',
-        end: '2024-12-31'
-      });
-    }
-  };
-
-  const fetchFilterOptions = async () => {
-    try {
-      const options = await filterAPI.getFilterOptions();
-      if (options.companies) {
-        setCompanies(options.companies.filter((c: any) => c.type === 'BDC'));
+    const fetchAllData = async () => {
+      // Cancel previous requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
-      if (options.products) {
-        setProducts(options.products);
-      }
-    } catch (err) {
-      // Use default data if API fails
-      setCompanies([
-        { id: '1', name: 'Total Energies', type: 'BDC' },
-        { id: '2', name: 'Vivo Energy', type: 'BDC' },
-        { id: '3', name: 'Puma Energy', type: 'BDC' },
-      ]);
-      setProducts([
-        { id: '1', name: 'PMS' },
-        { id: '2', name: 'AGO' },
-        { id: '3', name: 'DPK' },
-      ]);
-    }
-  };
-
-  const fetchBDCData = async () => {
-    try {
-      setLoading(true);
       
-      // Build filters
-      const filters: any = { company_type: 'BDC' };
-      if (selectedCompany !== 'all') filters.company_id = selectedCompany;
-      if (selectedProduct !== 'all') filters.product_id = selectedProduct;
-
-      // Fetch BDC analytics
-      const response = await analyticsAPI.queryAnalytics({
-        metrics: ['volume_liters', 'company_performance', 'product_distribution'],
-        filters,
-        date_range: dateRange,
-        aggregation: 'monthly'
-      });
-
-      // Process the data
-      if (response.data) {
-        // Update KPIs
-        setKpis({
-          totalBDCs: response.data.company_count || 82,
-          totalVolume: response.data.total_volume || 33500000000,
-          avgPerformance: response.data.avg_performance || 408536585,
-          marketShare: response.data.market_share || 100,
-          topPerformer: response.data.top_performer || 'Total Energies',
-          growthRate: response.data.growth_rate || 12.5
-        });
-
-        // Set performance trend
-        if (response.data.time_series) {
-          const labels = response.data.time_series.map((item: any) => item.month);
-          const volumes = response.data.time_series.map((item: any) => item.volume);
-          
-          setPerformanceTrend({
-            labels,
-            datasets: [{
-              label: 'BDC Volume Performance',
-              data: volumes,
-              borderColor: 'rgb(59, 130, 246)',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              tension: 0.4,
-              fill: true,
-            }]
-          });
-        }
-
-        // Set company rankings
-        if (response.data.company_rankings) {
-          setCompanyRankings(response.data.company_rankings.slice(0, 10));
-        }
-
-        // Set product distribution
-        if (response.data.product_distribution) {
-          const labels = Object.keys(response.data.product_distribution);
-          const data = Object.values(response.data.product_distribution);
-          
-          setProductDistribution({
-            labels,
-            datasets: [{
-              label: 'Product Volume',
-              data,
-              backgroundColor: [
-                'rgba(59, 130, 246, 0.8)',
-                'rgba(147, 51, 234, 0.8)',
-                'rgba(34, 197, 94, 0.8)',
-                'rgba(251, 146, 60, 0.8)',
-                'rgba(239, 68, 68, 0.8)',
-              ],
-              borderWidth: 1,
-              borderColor: '#1F2937'
-            }]
-          });
-        }
-      }
-    } catch (err) {
-      console.error('BDC data fetch error:', err);
-      // Use demo data
-      setPerformanceTrend({
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        datasets: [{
-          label: 'BDC Volume Performance',
-          data: [2800000000, 2650000000, 2900000000, 2750000000, 2850000000, 2700000000,
-                 2950000000, 2800000000, 2750000000, 2900000000, 2850000000, 2950000000],
-          borderColor: 'rgb(59, 130, 246)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          tension: 0.4,
-          fill: true,
-        }]
-      });
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
       
-      setCompanyRankings([
-        { rank: 1, name: 'Total Energies', volume: 4200000000, change: 15.2 },
-        { rank: 2, name: 'Vivo Energy', volume: 3800000000, change: 12.8 },
-        { rank: 3, name: 'Puma Energy', volume: 3500000000, change: 10.5 },
-        { rank: 4, name: 'Goil', volume: 3200000000, change: 8.3 },
-        { rank: 5, name: 'Oando', volume: 2900000000, change: 7.1 },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+      // Debounced fetch
+      const timeoutId = setTimeout(async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          
+          const params = getFilterParams();
+          
+          // Fetch all endpoints in parallel
+          const [performance, operational, growth, network] = await Promise.all([
+            fetch(`http://localhost:8003/api/v2/bdc/performance?${params}`, { signal: abortController.signal }),
+            fetch(`http://localhost:8003/api/v2/bdc/operational?${params}`, { signal: abortController.signal }),
+            fetch(`http://localhost:8003/api/v2/bdc/growth?${params}`, { signal: abortController.signal }),
+            fetch(`http://localhost:8003/api/v2/bdc/network?${params}`, { signal: abortController.signal })
+          ]);
+          
+          if (!performance.ok || !operational.ok || !growth.ok || !network.ok) {
+            throw new Error('Failed to fetch BDC analytics data');
+          }
+          
+          const [perfData, opData, growData, netData] = await Promise.all([
+            performance.json(),
+            operational.json(),
+            growth.json(),
+            network.json()
+          ]);
+          
+          if (!abortController.signal.aborted) {
+            setPerformanceData(perfData);
+            setOperationalData(opData);
+            setGrowthData(growData);
+            setNetworkData(netData);
+            setError(null);
+          }
+        } catch (err) {
+          if (err instanceof Error && err.name !== 'AbortError') {
+            setError(err.message);
+            console.error('Error fetching BDC data:', err);
+          }
+        } finally {
+          if (!abortController.signal.aborted) {
+            setLoading(false);
+          }
+        }
+      }, 300);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        if (abortController) {
+          abortController.abort();
+        }
+      };
+    };
+    
+    fetchAllData();
+  }, [startDate, endDate, selectedCompanies, selectedProducts, topN, volumeUnit, getFilterParams]);
 
-  const formatVolume = (volume: number) => {
-    if (volume >= 1000000000) return `${(volume / 1000000000).toFixed(1)}B`;
-    if (volume >= 1000000) return `${(volume / 1000000).toFixed(1)}M`;
-    if (volume >= 1000) return `${(volume / 1000).toFixed(1)}K`;
-    return volume.toString();
-  };
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-white mb-2">BDC Operations Dashboard</h1>
+            <p className="text-gray-400">Loading comprehensive analytics...</p>
+          </div>
+          <GlobalFilters restrictToCompanyType="BDC" />
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 p-6">
+        <div className="max-w-7xl mx-auto">
+          <GlobalFilters restrictToCompanyType="BDC" />
+          <div className="mt-4 p-4 bg-red-900 border border-red-700 rounded-lg flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div className="text-red-200">{error}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!performanceData || !operationalData) {
+    return null;
+  }
+
+  // Process data for visualizations
+  const { top_companies, product_mix, monthly_trend } = performanceData;
+  const { operational_consistency, product_flow, temporal_patterns, quality_metrics, market_dynamics } = operationalData;
+  const { yoy_growth, qoq_growth, company_growth } = growthData || { yoy_growth: [], qoq_growth: [], company_growth: [] };
+  const { network_relationships } = networkData || { network_relationships: [] };
+
+  // Calculate KPIs from actual database data
+  const totalVolume = top_companies.reduce((sum: number, c: Company) => sum + (volumeUnit === 'mt' ? c.total_volume_mt : c.total_volume_liters), 0);
+  const totalTransactions = top_companies.reduce((sum: number, c: Company) => sum + c.transaction_count, 0);
+  const avgQualityScore = quality_metrics?.avg_quality_score || 0;
+  const dataIntegrity = quality_metrics ? ((quality_metrics.high_quality_count / quality_metrics.total_records) * 100) : 0;
+  
+  // Calculate market concentration (HHI)
+  const currentHHI = market_dynamics?.[0]?.hhi_index || 0;
+  const marketStructure = market_dynamics?.[0]?.market_structure || 'Unknown';
+  
+  // Calculate operational efficiency
+  const avgConsistencyScore = operational_consistency?.reduce((sum: number, c: OperationalMetrics) => sum + c.consistency_score, 0) / (operational_consistency?.length || 1);
+  const topPerformer = operational_consistency?.[0];
+
+  // Prepare chart data
+  const weeklyPatternData = temporal_patterns?.map((p: TemporalPattern) => ({
+    day: p.weekday,
+    volume: p.avg_volume_mt,
+    transactions: p.avg_transactions,
+    companies: p.avg_companies
+  })) || [];
+
+  const productRiskMatrix = product_flow?.slice(0, 10).map((p: ProductFlow) => ({
+    name: p.product_name,
+    x: p.coefficient_variation * 100, // Risk (volatility)
+    y: p.daily_throughput_mt, // Performance
+    z: p.total_volume_mt, // Size
+    suppliers: p.unique_suppliers,
+    category: p.product_category
+  })) || [];
+
+  const companyPerformanceRadar = operational_consistency?.slice(0, 6).map((c: OperationalMetrics) => ({
+    company: c.company_name.length > 15 ? c.company_name.substring(0, 15) + '...' : c.company_name,
+    volume: (c.volume_rank / operational_consistency.length) * 100,
+    consistency: (c.consistency_rank / operational_consistency.length) * 100,
+    diversity: (c.diversity_rank / operational_consistency.length) * 100,
+    quality: c.avg_quality_score * 100,
+    efficiency: c.monthly_avg_volume / 1000 // Scale for visibility
+  })) || [];
+
+  const growthLeaders = company_growth?.slice(0, 10).map((c: CompanyGrowth) => ({
+    name: c.company_name,
+    momGrowth: c.avg_mom_growth,
+    yoyGrowth: c.avg_yoy_growth,
+    volume: c.total_volume,
+    trend: c.avg_yoy_growth > 0 ? 'up' : 'down'
+  })) || [];
+
+  // Quality distribution for pie chart
+  const qualityDistribution = quality_metrics ? [
+    { name: 'High Quality (≥95%)', value: quality_metrics.high_quality_count, color: '#10B981' },
+    { name: 'Medium Quality (80-95%)', value: quality_metrics.medium_quality_count, color: '#F59E0B' },
+    { name: 'Low Quality (<80%)', value: quality_metrics.low_quality_count, color: '#EF4444' }
+  ] : [];
 
   return (
-    <div className="space-y-6">
-      {/* Header with Filters */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div className="min-h-screen bg-gray-900 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-white">BDC Dashboard</h1>
-          <p className="text-gray-400 mt-1">Bulk Distribution Companies Analytics</p>
+          <h1 className="text-3xl font-bold text-white mb-2">BDC Operations Dashboard</h1>
+          <p className="text-gray-400">Real-time analytics powered by PostgreSQL database</p>
         </div>
         
-        <div className="flex flex-wrap gap-3">
-          {/* Company Filter */}
-          <div className="relative">
-            <select
-              value={selectedCompany}
-              onChange={(e) => setSelectedCompany(e.target.value)}
-              className="appearance-none bg-gray-800 border border-gray-700 text-white text-sm rounded-lg pl-10 pr-10 py-2.5 focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All BDCs</option>
-              {companies.map((company) => (
-                <option key={company.id} value={company.id}>{company.name}</option>
-              ))}
-            </select>
-            <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          </div>
+        {/* Global Filters */}
+        <GlobalFilters restrictToCompanyType="BDC" />
 
-          {/* Product Filter */}
-          <div className="relative">
-            <select
-              value={selectedProduct}
-              onChange={(e) => setSelectedProduct(e.target.value)}
-              className="appearance-none bg-gray-800 border border-gray-700 text-white text-sm rounded-lg pl-10 pr-10 py-2.5 focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Products</option>
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>{product.name}</option>
-              ))}
-            </select>
-            <Package className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          </div>
+        {/* Enhanced KPI Cards with Database Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-gray-400 flex items-center gap-1">
+                <Activity className="h-3 w-3" />
+                Total Volume
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {formatVolume(totalVolume, volumeUnit)}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {totalTransactions} transactions
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Export Button */}
-          <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:from-blue-600 hover:to-purple-700 transition">
-            <Download className="w-4 h-4" />
-            <span>Export</span>
-          </button>
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-gray-400 flex items-center gap-1">
+                <Gauge className="h-3 w-3" />
+                Market HHI
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${
+                currentHHI < 1500 ? 'text-green-400' :
+                currentHHI < 2500 ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                {formatNumber(currentHHI)}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {marketStructure}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-gray-400 flex items-center gap-1">
+                <Shield className="h-3 w-3" />
+                Data Quality
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${
+                avgQualityScore >= 0.95 ? 'text-green-400' :
+                avgQualityScore >= 0.8 ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                {(avgQualityScore * 100).toFixed(1)}%
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {dataIntegrity.toFixed(0)}% high quality
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-gray-400 flex items-center gap-1">
+                <Zap className="h-3 w-3" />
+                Op. Consistency
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {(avgConsistencyScore * 100).toFixed(1)}%
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Across {operational_consistency?.length || 0} BDCs
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-gray-400 flex items-center gap-1">
+                <Award className="h-3 w-3" />
+                Top Performer
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm font-bold text-white truncate">
+                {topPerformer?.company_name || 'N/A'}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {formatVolume(topPerformer?.total_volume_mt || 0, 'mt')}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <BDCKPICard
-          title="Total BDC Companies"
-          value={kpis.totalBDCs}
-          subtitle="Active distributors"
-          change={5.2}
-          icon={Users}
-          gradient="from-blue-500 to-blue-600"
-        />
-        <BDCKPICard
-          title="Total Volume"
-          value={formatVolume(kpis.totalVolume)}
-          subtitle="Liters distributed"
-          change={kpis.growthRate}
-          icon={Fuel}
-          gradient="from-purple-500 to-purple-600"
-        />
-        <BDCKPICard
-          title="Avg Performance"
-          value={formatVolume(kpis.avgPerformance)}
-          subtitle="Per company"
-          change={8.7}
-          icon={Target}
-          gradient="from-green-500 to-green-600"
-        />
-        <BDCKPICard
-          title="Top Performer"
-          value={kpis.topPerformer}
-          subtitle={`${kpis.marketShare.toFixed(1)}% market share`}
-          icon={Award}
-          gradient="from-orange-500 to-orange-600"
-        />
-      </div>
-
-      {/* Main Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Performance Trend */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Performance Trend</h3>
-            <Activity className="w-5 h-5 text-gray-400" />
-          </div>
-          {performanceTrend ? (
-            <Line
-              data={performanceTrend}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    callbacks: {
-                      label: (context) => `Volume: ${formatVolume(context.parsed.y)} L`
-                    }
-                  }
-                },
-                scales: {
-                  y: {
-                    ticks: {
-                      callback: (value) => formatVolume(value as number),
-                      color: '#9CA3AF'
-                    },
-                    grid: { color: 'rgba(75, 85, 99, 0.3)' }
-                  },
-                  x: {
-                    ticks: { color: '#9CA3AF' },
-                    grid: { display: false }
-                  }
-                }
-              }}
-            />
-          ) : (
-            <div className="h-64 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        {/* Row 1: Market Share & Operational Consistency */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ExpandableChart
+            title="Market Share & Concentration Analysis"
+            description="Company distribution with HHI-based concentration metrics"
+            icon={<BarChart3 className="h-5 w-5 text-white" />}
+          >
+            <ResponsiveContainer width="100%" height={350}>
+              <ComposedChart data={top_companies.slice(0, topN)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis 
+                  dataKey="company_name" 
+                  stroke="#9CA3AF"
+                  angle={-45}
+                  textAnchor="end"
+                  height={100}
+                  tick={{ fontSize: 10 }}
+                />
+                <YAxis yAxisId="left" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
+                <YAxis yAxisId="right" orientation="right" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                  labelStyle={{ color: '#F3F4F6' }}
+                />
+                <Legend />
+                <Bar yAxisId="left" dataKey="total_volume_mt" fill="#3B82F6" name="Volume (MT)" />
+                <Line 
+                  yAxisId="right" 
+                  type="monotone" 
+                  dataKey="market_share_percent" 
+                  stroke="#10B981" 
+                  strokeWidth={2}
+                  name="Market Share (%)"
+                  dot={{ fill: '#10B981' }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+            <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
+              <div className="bg-gray-700 p-2 rounded">
+                <span className="text-gray-400">Top 3 Share:</span>
+                <span className="text-white ml-2 font-medium">
+                  {top_companies.slice(0, 3).reduce((sum, c) => sum + c.market_share_percent, 0).toFixed(1)}%
+                </span>
+              </div>
+              <div className="bg-gray-700 p-2 rounded">
+                <span className="text-gray-400">Active BDCs:</span>
+                <span className="text-white ml-2 font-medium">{top_companies.length}</span>
+              </div>
+              <div className="bg-gray-700 p-2 rounded">
+                <span className="text-gray-400">HHI Index:</span>
+                <span className={`ml-2 font-medium ${
+                  currentHHI < 1500 ? 'text-green-400' :
+                  currentHHI < 2500 ? 'text-yellow-400' : 'text-red-400'
+                }`}>
+                  {formatNumber(currentHHI)}
+                </span>
+              </div>
             </div>
-          )}
-        </motion.div>
+          </ExpandableChart>
 
-        {/* Product Distribution */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Product Distribution</h3>
-            <Package className="w-5 h-5 text-gray-400" />
-          </div>
-          {productDistribution ? (
-            <Bar
-              data={productDistribution}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    callbacks: {
-                      label: (context) => `${context.label}: ${formatVolume(context.parsed.y)} L`
-                    }
-                  }
-                },
-                scales: {
-                  y: {
-                    ticks: {
-                      callback: (value) => formatVolume(value as number),
-                      color: '#9CA3AF'
-                    },
-                    grid: { color: 'rgba(75, 85, 99, 0.3)' }
-                  },
-                  x: {
-                    ticks: { color: '#9CA3AF' },
-                    grid: { display: false }
-                  }
-                }
-              }}
-            />
-          ) : (
-            <div className="h-64 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
-            </div>
-          )}
-        </motion.div>
-      </div>
-
-      {/* Company Rankings Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-gray-800 rounded-xl p-6 border border-gray-700"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">Top BDC Companies</h3>
-          <BarChart3 className="w-5 h-5 text-gray-400" />
+          <ExpandableChart
+            title="Operational Consistency Matrix"
+            description="Company performance across multiple operational dimensions"
+            icon={<Target className="h-5 w-5 text-white" />}
+          >
+            <ResponsiveContainer width="100%" height={350}>
+              <RadarChart data={companyPerformanceRadar}>
+                <PolarGrid stroke="#374151" />
+                <PolarAngleAxis dataKey="company" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
+                <PolarRadiusAxis stroke="#9CA3AF" domain={[0, 100]} tick={{ fontSize: 10 }} />
+                <Radar name="Volume Rank" dataKey="volume" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} />
+                <Radar name="Consistency" dataKey="consistency" stroke="#10B981" fill="#10B981" fillOpacity={0.3} />
+                <Radar name="Diversity" dataKey="diversity" stroke="#F59E0B" fill="#F59E0B" fillOpacity={0.3} />
+                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
+                <Legend />
+              </RadarChart>
+            </ResponsiveContainer>
+          </ExpandableChart>
         </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left border-b border-gray-700">
-                <th className="pb-3 text-sm font-medium text-gray-400">Rank</th>
-                <th className="pb-3 text-sm font-medium text-gray-400">Company</th>
-                <th className="pb-3 text-sm font-medium text-gray-400">Volume</th>
-                <th className="pb-3 text-sm font-medium text-gray-400">Market Share</th>
-                <th className="pb-3 text-sm font-medium text-gray-400">Growth</th>
-              </tr>
-            </thead>
-            <tbody>
-              {companyRankings.map((company, index) => (
-                <motion.tr
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="border-b border-gray-700/50"
-                >
-                  <td className="py-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      index === 0 ? 'bg-yellow-500/20 text-yellow-500' :
-                      index === 1 ? 'bg-gray-400/20 text-gray-400' :
-                      index === 2 ? 'bg-orange-500/20 text-orange-500' :
-                      'bg-gray-700 text-gray-400'
-                    }`}>
-                      {company.rank || index + 1}
-                    </div>
-                  </td>
-                  <td className="py-3">
-                    <p className="text-white font-medium">{company.name}</p>
-                  </td>
-                  <td className="py-3">
-                    <p className="text-gray-300">{formatVolume(company.volume)} L</p>
-                  </td>
-                  <td className="py-3">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-24 bg-gray-700 rounded-full h-2">
-                        <div
-                          className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full"
-                          style={{ width: `${(company.volume / kpis.totalVolume) * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-gray-400 text-sm">
-                        {((company.volume / kpis.totalVolume) * 100).toFixed(1)}%
+
+        {/* Row 2: Product Analysis & Weekly Patterns */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ExpandableChart
+            title="Product Risk-Performance Matrix"
+            description="Volatility vs throughput analysis for strategic product assessment"
+            icon={<Package className="h-5 w-5 text-white" />}
+          >
+            <ResponsiveContainer width="100%" height={350}>
+              <ScatterChart>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis 
+                  dataKey="x" 
+                  stroke="#9CA3AF" 
+                  name="Volatility"
+                  unit="%"
+                  tick={{ fontSize: 10 }}
+                  label={{ value: 'Volatility (CV%)', position: 'insideBottom', offset: -5, style: { fill: '#9CA3AF' } }}
+                />
+                <YAxis 
+                  dataKey="y" 
+                  stroke="#9CA3AF" 
+                  name="Daily Throughput"
+                  tick={{ fontSize: 10 }}
+                  label={{ value: 'Daily Throughput (MT)', angle: -90, position: 'insideLeft', style: { fill: '#9CA3AF' } }}
+                />
+                <ZAxis dataKey="z" range={[100, 1000]} name="Total Volume" />
+                <Tooltip 
+                  cursor={{ strokeDasharray: '3 3' }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length > 0) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-gray-800 p-3 border border-gray-700 rounded-lg">
+                          <p className="font-semibold text-white mb-2">{data.name}</p>
+                          <p className="text-sm text-gray-300">Category: {data.category}</p>
+                          <p className="text-sm text-gray-300">Volatility: {data.x.toFixed(1)}%</p>
+                          <p className="text-sm text-gray-300">Daily Throughput: {formatNumber(data.y)} MT</p>
+                          <p className="text-sm text-gray-300">Total Volume: {formatNumber(data.z)} MT</p>
+                          <p className="text-sm text-gray-300">Suppliers: {data.suppliers}</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Scatter name="Products" data={productRiskMatrix} fill="#8B5CF6">
+                  {productRiskMatrix.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Scatter>
+              </ScatterChart>
+            </ResponsiveContainer>
+            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-green-900/20 p-2 rounded border border-green-800">
+                <span className="text-green-400">Low Risk Zone:</span> Low volatility, stable supply
+              </div>
+              <div className="bg-red-900/20 p-2 rounded border border-red-800">
+                <span className="text-red-400">High Risk Zone:</span> High volatility, unstable
+              </div>
+            </div>
+          </ExpandableChart>
+
+          <ExpandableChart
+            title="Weekly Operational Patterns"
+            description="Day-of-week analysis revealing operational rhythms"
+            icon={<Calendar className="h-5 w-5 text-white" />}
+          >
+            <ResponsiveContainer width="100%" height={350}>
+              <AreaChart data={weeklyPatternData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="day" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
+                <YAxis stroke="#9CA3AF" tick={{ fontSize: 10 }} />
+                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
+                <Area 
+                  type="monotone" 
+                  dataKey="volume" 
+                  stackId="1"
+                  stroke="#3B82F6" 
+                  fill="#3B82F6" 
+                  fillOpacity={0.6}
+                  name="Volume (MT)"
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="transactions" 
+                  stackId="2"
+                  stroke="#10B981" 
+                  fill="#10B981" 
+                  fillOpacity={0.6}
+                  name="Transactions"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+            <div className="mt-4 flex justify-between text-sm">
+              <div>
+                <span className="text-gray-400">Peak Day:</span>
+                <span className="text-green-400 ml-2">
+                  {weeklyPatternData.reduce((max: any, day: any) => day.volume > (max?.volume || 0) ? day : max, null)?.day || 'N/A'}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-400">Low Day:</span>
+                <span className="text-red-400 ml-2">
+                  {weeklyPatternData.reduce((min: any, day: any) => day.volume < (min?.volume || Infinity) ? day : min, null)?.day || 'N/A'}
+                </span>
+              </div>
+            </div>
+          </ExpandableChart>
+        </div>
+
+        {/* Row 3: Growth Analytics & Data Quality */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ExpandableChart
+            title="Growth Leaders & Trends"
+            description="Company growth performance based on actual transaction data"
+            icon={<TrendingUp className="h-5 w-5 text-white" />}
+          >
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={growthLeaders} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis type="number" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
+                <YAxis type="category" dataKey="name" stroke="#9CA3AF" width={150} tick={{ fontSize: 10 }} />
+                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
+                <Bar dataKey="yoyGrowth" fill="#10B981" name="YoY Growth %" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            {yoy_growth && yoy_growth.length > 0 && (
+              <div className="mt-4 p-3 bg-gray-800 rounded-lg border border-gray-700">
+                <p className="text-sm font-medium text-gray-300 mb-2">Year-over-Year Performance</p>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  {yoy_growth.slice(-3).map((year: GrowthData, idx: number) => (
+                    <div key={idx} className="bg-gray-700 p-2 rounded">
+                      <span className="text-gray-400">{year.year}:</span>
+                      <span className={`ml-1 font-medium ${
+                        (year.yoy_growth_rate || 0) > 0 ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {year.yoy_growth_rate ? `${year.yoy_growth_rate.toFixed(1)}%` : 'N/A'}
                       </span>
                     </div>
-                  </td>
-                  <td className="py-3">
-                    <div className={`flex items-center space-x-1 ${
-                      company.change > 0 ? 'text-green-400' : 'text-red-400'
-                    }`}>
-                      {company.change > 0 ? 
-                        <TrendingUp className="w-4 h-4" /> : 
-                        <TrendingDown className="w-4 h-4" />
-                      }
-                      <span>{Math.abs(company.change)}%</span>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
+                  ))}
+                </div>
+              </div>
+            )}
+          </ExpandableChart>
+
+          <ExpandableChart
+            title="Data Quality Distribution"
+            description="Quality scores and outlier detection from database"
+            icon={<Shield className="h-5 w-5 text-white" />}
+          >
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie
+                  data={qualityDistribution}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {qualityDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            {quality_metrics && (
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div className="bg-gray-700 p-2 rounded">
+                  <span className="text-gray-400">Avg Score:</span>
+                  <span className="text-white ml-2 font-medium">
+                    {(quality_metrics.avg_quality_score * 100).toFixed(2)}%
+                  </span>
+                </div>
+                <div className="bg-gray-700 p-2 rounded">
+                  <span className="text-gray-400">Outliers:</span>
+                  <span className="text-yellow-400 ml-2 font-medium">
+                    {quality_metrics.outlier_count} ({((quality_metrics.outlier_count / quality_metrics.total_records) * 100).toFixed(1)}%)
+                  </span>
+                </div>
+                <div className="bg-gray-700 p-2 rounded">
+                  <span className="text-gray-400">Std Dev:</span>
+                  <span className="text-white ml-2 font-medium">
+                    {(quality_metrics.quality_stddev * 100).toFixed(3)}%
+                  </span>
+                </div>
+                <div className="bg-gray-700 p-2 rounded">
+                  <span className="text-gray-400">Total Records:</span>
+                  <span className="text-white ml-2 font-medium">
+                    {formatNumber(quality_metrics.total_records)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </ExpandableChart>
         </div>
-      </motion.div>
 
-      {/* Performance Insights */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3 }}
-          className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-6 border border-gray-700"
+        {/* Row 4: Historical Trends */}
+        <ExpandableChart
+          title="Historical Market Dynamics"
+          description="Monthly HHI trends and market structure evolution"
+          icon={<Clock className="h-5 w-5 text-white" />}
         >
-          <Truck className="w-8 h-8 text-blue-400 mb-3" />
-          <h4 className="text-white font-semibold mb-2">Distribution Efficiency</h4>
-          <p className="text-3xl font-bold text-white mb-1">94.2%</p>
-          <p className="text-gray-400 text-sm">On-time delivery rate</p>
-        </motion.div>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={market_dynamics || []}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis 
+                dataKey={(item) => `${item.year}-${String(item.month).padStart(2, '0')}`} 
+                stroke="#9CA3AF" 
+                tick={{ fontSize: 10 }}
+              />
+              <YAxis stroke="#9CA3AF" tick={{ fontSize: 10 }} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                labelFormatter={(value) => `Period: ${value}`}
+                formatter={(value: any, name: string) => {
+                  if (name === 'HHI Index') return formatNumber(value);
+                  if (name === 'Top Share') return `${value.toFixed(1)}%`;
+                  if (name === 'Active Companies') return value;
+                  return value;
+                }}
+              />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="hhi_index" 
+                stroke="#3B82F6" 
+                strokeWidth={2}
+                name="HHI Index"
+                dot={{ r: 3 }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="top_share" 
+                stroke="#10B981" 
+                strokeWidth={2}
+                name="Top Share"
+                yAxisId="right"
+                dot={{ r: 3 }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="active_companies" 
+                stroke="#F59E0B" 
+                strokeWidth={2}
+                name="Active Companies"
+                dot={{ r: 3 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+          <div className="mt-4 flex justify-around text-sm">
+            <div className="text-center">
+              <p className="text-gray-400">Current Structure</p>
+              <p className={`font-medium ${
+                marketStructure === 'Competitive' ? 'text-green-400' :
+                marketStructure === 'Moderately Concentrated' ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                {marketStructure}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-gray-400">Trend Direction</p>
+              <p className="font-medium text-white flex items-center justify-center gap-1">
+                {market_dynamics && market_dynamics.length > 1 && 
+                 market_dynamics[0].hhi_index > market_dynamics[1].hhi_index ? (
+                  <>Concentrating <TrendingUp className="h-4 w-4 text-red-400" /></>
+                ) : (
+                  <>Dispersing <TrendingDown className="h-4 w-4 text-green-400" /></>
+                )}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-gray-400">Market Health</p>
+              <p className={`font-medium ${
+                currentHHI < 1500 && market_dynamics?.[0]?.active_companies > 20 ? 'text-green-400' :
+                currentHHI < 2500 && market_dynamics?.[0]?.active_companies > 10 ? 'text-yellow-400' : 
+                'text-red-400'
+              }`}>
+                {currentHHI < 1500 && market_dynamics?.[0]?.active_companies > 20 ? 'Healthy' :
+                 currentHHI < 2500 && market_dynamics?.[0]?.active_companies > 10 ? 'Moderate' : 
+                 'Concerning'}
+              </p>
+            </div>
+          </div>
+        </ExpandableChart>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4 }}
-          className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-xl p-6 border border-gray-700"
-        >
-          <Target className="w-8 h-8 text-green-400 mb-3" />
-          <h4 className="text-white font-semibold mb-2">Target Achievement</h4>
-          <p className="text-3xl font-bold text-white mb-1">108%</p>
-          <p className="text-gray-400 text-sm">Of quarterly target</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5 }}
-          className="bg-gradient-to-br from-orange-500/10 to-red-500/10 rounded-xl p-6 border border-gray-700"
-        >
-          <Activity className="w-8 h-8 text-orange-400 mb-3" />
-          <h4 className="text-white font-semibold mb-2">Market Activity</h4>
-          <p className="text-3xl font-bold text-white mb-1">2.8K</p>
-          <p className="text-gray-400 text-sm">Transactions today</p>
-        </motion.div>
+        {/* Data Source Footer */}
+        <div className="mt-8 p-4 bg-gray-800 border border-gray-700 rounded-lg">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <Info className="h-4 w-4 text-blue-400" />
+              <span className="text-gray-400">
+                Data Source: PostgreSQL Database • Table: petroverse.fact_bdc_transactions
+              </span>
+            </div>
+            <div className="text-gray-500">
+              Last Updated: {new Date().toLocaleString()} • 
+              Records: {quality_metrics?.total_records || 0} • 
+              Period: {startDate || 'All'} to {endDate || 'Current'}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

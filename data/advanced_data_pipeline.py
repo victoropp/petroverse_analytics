@@ -41,7 +41,7 @@ class PetroVerseDataPipeline:
         self.quality_scores = {}
         
         # Database connection
-        self.db_url = "postgresql://postgres:postgres123@localhost:5432/petroverse_analytics"
+        self.db_url = "postgresql://postgres:postgres@localhost:5432/petroverse_analytics"
         
     def load_raw_data(self):
         """Load all raw data files"""
@@ -855,13 +855,13 @@ async def main():
     print("=================================")
     
     # Initialize pipeline
-    pipeline = PetroVerseDataPipeline(r"C:\Users\victo\Documents\Data_Science_Projects\petroverse_v2\data\raw")
+    pipeline = PetroVerseDataPipeline(r"C:\Users\victo\Documents\Data_Science_Projects\petroverse_analytics\data\raw")
     
     # Create consolidated dataset
     cleaned_data = pipeline.create_consolidated_dataset()
     
     # Save cleaned data as separate files
-    output_dir = Path(r"C:\Users\victo\Documents\Data_Science_Projects\petroverse_v2\data")
+    output_dir = Path(r"C:\Users\victo\Documents\Data_Science_Projects\petroverse_analytics\data")
     
     # Save BDC data
     bdc_path = output_dir / "cleaned_bdc_data.csv"

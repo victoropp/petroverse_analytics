@@ -352,10 +352,8 @@ async def get_supply_performance_metrics(
             filters.append(f"s.region = ANY(${param_count})")
             params.append(region_ids)
         
-        if product:
-            param_count += 1
-            filters.append(f"s.product = ${param_count}")
-            params.append(product)
+        # Note: In supply data, products are stored as strings, not IDs
+        # product_ids parameter is kept for interface consistency but not used
         
         if min_quality:
             param_count += 1
@@ -590,10 +588,8 @@ async def get_supply_regional_analytics(
             filters.append(f"s.region = ANY(${param_count})")
             params.append(region_ids)
         
-        if product:
-            param_count += 1
-            filters.append(f"s.product = ${param_count}")
-            params.append(product)
+        # Note: In supply data, products are stored as strings, not IDs
+        # product_ids parameter is kept for interface consistency but not used
         
         if min_quality:
             param_count += 1

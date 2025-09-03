@@ -16,7 +16,8 @@
       "Read(C:\\Users\\victo\\Documents\\Data_Science_Projects\\petroverse_Analytics\\apps\\web\\src\\app\\dashboard\\ghana-map/**)",
       "Bash(git add:*)",
       "Bash(git push:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(start http://localhost:3005/dashboard/supply)"
     ],
     "deny": [],
     "ask": [],

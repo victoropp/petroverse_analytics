@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpandableChart } from '@/components/ui/expandable-chart';
 import GlobalFilters from '@/components/filters/GlobalFilters';
 import { useGlobalFilters } from '@/lib/global-filters';
@@ -10,16 +13,47 @@ import {
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ScatterChart, Scatter, ZAxis, Treemap, Sankey, Layer,
-  ComposedChart, Legend
+  ComposedChart, Legend, FunnelChart, Funnel, LabelList
 } from 'recharts';
 import { 
   TrendingUp, TrendingDown, Activity, BarChart3, Package, 
   Users, Calendar, Award, AlertCircle, Info, Target,
   Zap, Shield, Network, Clock, Gauge, MapPin, Globe,
-  Truck, AlertTriangle, CheckCircle
+  Truck, AlertTriangle, CheckCircle, ArrowUp, ArrowDown,
+  Minus, RefreshCw, Share2, Download, Filter, Settings,
+  ChevronUp, ChevronDown, Droplets, Building2, DollarSign
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-// Interfaces for API responses
+// Enhanced interfaces
+interface KPIMetrics {
+  total_supply: {
+    value_liters: number;
+    value_mt: number;
+    formatted: string;
+    trend: 'up' | 'down' | 'stable';
+    change_percent: number;
+  };
+  average_growth: {
+    value: number;
+    formatted: string;
+    direction: 'up' | 'down' | 'stable';
+    growing_regions: number;
+  };
+  active_regions: number;
+  active_products: number;
+  quality_score: {
+    value: number;
+    status: 'good' | 'warning' | 'critical';
+  };
+  risk_summary: {
+    high_risk_count: number;
+    critical_risk_count: number;
+    total_at_risk: number;
+  };
+}
+
+// Component interfaces from original
 interface Region {
   region: string;
   product_count: number;
@@ -70,40 +104,15 @@ interface RegionalConsistency {
   diversity_rank: number;
 }
 
-interface ProductFlow {
-  region: string;
-  product: string;
+interface SupplyResilience {
+  product_name: string;
   product_category: string;
-  supply_count: number;
+  region_coverage: number;
   total_quantity: number;
-  avg_quantity: number;
-  min_quantity: number;
-  max_quantity: number;
-  quantity_stddev: number;
-  active_months: number;
-}
-
-interface TemporalPattern {
-  month_num: number;
-  month_name: string;
-  avg_regions: number;
-  avg_quantity: number;
-  total_quantity: number;
-  transaction_count: number;
-  product_diversity: number;
-}
-
-interface GrowthData {
-  year?: number;
-  quarter?: number;
-  regions: number;
-  products: number;
-  transactions: number;
-  total_quantity: number;
-  prev_year_quantity?: number;
-  prev_quarter_quantity?: number;
-  yoy_growth_rate?: number;
-  qoq_growth_rate?: number;
+  avg_transaction_size: number;
+  supply_stability_score: number;
+  volatility_coefficient: number;
+  supply_risk_level: string;
 }
 
 interface RegionalGrowth {
@@ -111,89 +120,40 @@ interface RegionalGrowth {
   avg_mom_growth: number;
   avg_yoy_growth: number;
   total_quantity: number;
-  data_points: number;
-  growth_rank: number;
-}
-
-interface SupplyResilience {
-  product_name: string;
-  product_category: string;
-  region_coverage: number;
-  total_transactions: number;
-  total_quantity: number;
-  avg_transaction_size: number;
-  volatility_coefficient: number;
-  avg_quality_score: number;
-  market_presence_months: number;
-  supply_coverage_level: string;
-  volatility_level: string;
-  volume_inclusion_threshold?: number;
-  region_threshold_q1?: number;
-  region_threshold_median?: number;
-  region_threshold_q3?: number;
-  volatility_threshold_q1?: number;
-  volatility_threshold_median?: number;
-  volatility_threshold_q3?: number;
-}
-
-interface RegionalBalance {
-  region: string;
-  product_category: string;
-  category_quantity: number;
-  total_quantity: number;
-  category_percentage: number;
 }
 
 interface RegionalExpansion {
   year: number;
   unique_regions: number;
-  regions_list: string[];
   new_regions_count: number;
-  new_regions_list: string[] | null;
 }
 
-interface QualityMetrics {
-  total_records: number;
-  avg_quality_score: number;
-  min_quality_score: number;
-  max_quality_score: number;
-  quality_stddev: number;
-  high_quality_count: number;
-  medium_quality_count: number;
-  low_quality_count: number;
-  outlier_count: number;
-  normal_count: number;
-}
-
-// Color palettes
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
-const GRADIENT_COLORS = {
-  blue: ['#60A5FA', '#3B82F6', '#2563EB'],
-  green: ['#34D399', '#10B981', '#059669'],
-  yellow: ['#FCD34D', '#F59E0B', '#D97706'],
-  red: ['#F87171', '#EF4444', '#DC2626'],
-  purple: ['#A78BFA', '#8B5CF6', '#7C3AED'],
-  cyan: ['#67E8F9', '#06B6D4', '#0891B2']
+// Utility functions
+const formatQuantity = (value: number) => {
+  if (!value) return '0';
+  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
+  return value.toFixed(0);
 };
 
-// Helper functions
-function formatNumber(num: number | null | undefined): string {
-  if (num === null || num === undefined || isNaN(num)) return '0';
-  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-  if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
-  return num.toFixed(2);
-}
+const CHART_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
 
-function formatQuantity(value: number, unit: string = 'L'): string {
-  return `${formatNumber(value)} ${unit}`;
-}
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
 
-function getPerformanceColor(value: number, thresholds: { good: number; warning: number }): string {
-  if (value >= thresholds.good) return '#10B981';
-  if (value >= thresholds.warning) return '#F59E0B';
-  return '#EF4444';
-}
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
 
 export default function EnhancedSupplyDashboard() {
   // State management
@@ -202,20 +162,25 @@ export default function EnhancedSupplyDashboard() {
   const [growthData, setGrowthData] = useState<any>(null);
   const [resilienceData, setResilienceData] = useState<any>(null);
   const [qualityData, setQualityData] = useState<any>(null);
+  const [kpiData, setKpiData] = useState<KPIMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'overview' | 'regional' | 'products' | 'trends'>('overview');
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   
-  // Global filters - Note: Supply doesn't have companies, so we'll adapt filters
+  // Global filters
   const { 
     getFilterParams, 
     startDate, 
     endDate, 
     selectedProducts, 
-    topN
+    topN,
+    volumeUnit
   } = useGlobalFilters();
 
-  // Fetch all data
+  // Fetch all data including KPIs
   useEffect(() => {
     const fetchAllData = async () => {
       // Cancel previous requests
@@ -232,32 +197,63 @@ export default function EnhancedSupplyDashboard() {
           setLoading(true);
           setError(null);
           
-          // Prepare params for supply endpoints (no company_ids)
+          // Prepare params for supply endpoints
           const params = new URLSearchParams();
           if (startDate) params.append('start_date', startDate);
           if (endDate) params.append('end_date', endDate);
-          if (selectedProducts.length > 0) params.append('product_ids', selectedProducts.join(','));
+          if (selectedProducts.length > 0) params.append('products', selectedProducts.join(','));
           params.append('top_n', topN.toString());
+          params.append('volume_unit', volumeUnit || 'liters');
           
           // Fetch all endpoints in parallel
-          const [performance, regional, growth, resilience, quality] = await Promise.all([
-            fetch(`http://localhost:8003/api/v2/supply/performance?${params}`, { signal: abortController.signal }),
-            fetch(`http://localhost:8003/api/v2/supply/regional?${params}`, { signal: abortController.signal }),
-            fetch(`http://localhost:8003/api/v2/supply/growth?${params}`, { signal: abortController.signal }),
-            fetch(`http://localhost:8003/api/v2/supply/resilience?${params}`, { signal: abortController.signal }),
-            fetch(`http://localhost:8003/api/v2/supply/quality?${params}`, { signal: abortController.signal })
+          const [performance, regional, growth, resilience, quality, kpi] = await Promise.all([
+            fetch(`http://localhost:8003/api/v2/supply/performance?${params}`, { 
+              signal: abortController.signal,
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            fetch(`http://localhost:8003/api/v2/supply/regional?${params}`, { 
+              signal: abortController.signal,
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            fetch(`http://localhost:8003/api/v2/supply/growth?${params}`, { 
+              signal: abortController.signal,
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            fetch(`http://localhost:8003/api/v2/supply/resilience?${params}`, { 
+              signal: abortController.signal,
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            fetch(`http://localhost:8003/api/v2/supply/quality?${params}`, { 
+              signal: abortController.signal,
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            fetch(`http://localhost:8003/api/v2/supply/kpi?${params}`, { 
+              signal: abortController.signal,
+              headers: { 'Content-Type': 'application/json' }
+            })
           ]);
           
-          if (!performance.ok || !regional.ok || !growth.ok || !resilience.ok || !quality.ok) {
-            throw new Error('Failed to fetch supply analytics data');
+          // Check for errors
+          const failedEndpoints = [];
+          if (!performance.ok) failedEndpoints.push('performance');
+          if (!regional.ok) failedEndpoints.push('regional');
+          if (!growth.ok) failedEndpoints.push('growth');
+          if (!resilience.ok) failedEndpoints.push('resilience');
+          if (!quality.ok) failedEndpoints.push('quality');
+          if (!kpi.ok) failedEndpoints.push('kpi');
+          
+          if (failedEndpoints.length > 0) {
+            console.warn(`Failed to fetch: ${failedEndpoints.join(', ')}`);
           }
           
-          const [perfData, regData, growData, resData, qualData] = await Promise.all([
-            performance.json(),
-            regional.json(),
-            growth.json(),
-            resilience.json(),
-            quality.json()
+          // Parse successful responses
+          const [perfData, regData, growData, resData, qualData, kpiMetrics] = await Promise.all([
+            performance.ok ? performance.json() : null,
+            regional.ok ? regional.json() : null,
+            growth.ok ? growth.json() : null,
+            resilience.ok ? resilience.json() : null,
+            quality.ok ? quality.json() : null,
+            kpi.ok ? kpi.json() : null
           ]);
           
           if (!abortController.signal.aborted) {
@@ -266,6 +262,7 @@ export default function EnhancedSupplyDashboard() {
             setGrowthData(growData);
             setResilienceData(resData);
             setQualityData(qualData);
+            setKpiData(kpiMetrics?.kpi_metrics || null);
             setError(null);
           }
         } catch (err) {
@@ -289,7 +286,13 @@ export default function EnhancedSupplyDashboard() {
     };
     
     fetchAllData();
-  }, [startDate, endDate, selectedProducts, topN]);
+  }, [startDate, endDate, selectedProducts, topN, volumeUnit]);
+
+  // Refresh data
+  const refreshData = () => {
+    const event = new Event('triggerRefresh');
+    window.dispatchEvent(event);
+  };
 
   // Loading state
   if (loading) {
@@ -302,7 +305,12 @@ export default function EnhancedSupplyDashboard() {
           </div>
           <GlobalFilters hideCompanyFilter={true} />
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            >
+              <RefreshCw className="h-12 w-12 text-blue-500" />
+            </motion.div>
           </div>
         </div>
       </div>
@@ -318,44 +326,25 @@ export default function EnhancedSupplyDashboard() {
           <div className="mt-4 p-4 bg-red-900 border border-red-700 rounded-lg flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-red-400" />
             <div className="text-red-200">{error}</div>
+            <Button onClick={refreshData} variant="outline" size="sm" className="ml-auto">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry
+            </Button>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!performanceData || !regionalData) {
-    return null;
-  }
-
   // Process data for visualizations
-  const { top_regions, product_distribution, monthly_trends } = performanceData;
-  const { regional_consistency, product_flow, temporal_patterns } = regionalData;
-  const { yoy_growth, qoq_growth, regional_growth } = growthData || { yoy_growth: [], qoq_growth: [], regional_growth: [] };
-  const { supply_resilience, regional_balance, regional_expansion } = resilienceData || { supply_resilience: [], regional_balance: [], regional_expansion: [] };
-  const { quality_overview, quality_by_region } = qualityData || { quality_overview: {}, quality_by_region: [] };
-
-  // Calculate KPIs
-  const totalQuantity = top_regions?.reduce((sum: number, r: Region) => sum + r.total_quantity, 0) || 0;
-  const totalTransactions = top_regions?.reduce((sum: number, r: Region) => sum + r.supply_count, 0) || 0;
-  const avgQualityScore = quality_overview?.avg_quality_score || 0;
-  const dataIntegrity = quality_overview && quality_overview.total_records ? 
-    ((quality_overview.high_quality_count / quality_overview.total_records) * 100) : 0;
-  
-  // Get latest regional expansion info
-  const latestExpansion = regional_expansion?.[regional_expansion.length - 1];
-  const currentRegions = latestExpansion?.unique_regions || 0;
-  const newRegionsIn2025 = latestExpansion?.new_regions_count || 0;
-  
-  // Calculate supply consistency
-  const avgConsistencyScore = regional_consistency?.length > 0 ?
-    regional_consistency.reduce((sum: number, r: RegionalConsistency) => 
-      sum + (100 - r.volatility_coefficient), 0) / regional_consistency.length / 100 : 0;
-  
-  const topRegion = top_regions?.[0];
+  const { top_regions, product_distribution, monthly_trends } = performanceData || {};
+  const { regional_consistency, product_flow, temporal_patterns } = regionalData || {};
+  const { yoy_growth, qoq_growth, regional_growth } = growthData || {};
+  const { supply_resilience, regional_balance, regional_expansion } = resilienceData || {};
+  const { quality_overview, quality_by_region } = qualityData || {};
 
   // Prepare chart data
-  const monthlyPatternData = temporal_patterns?.map((p: TemporalPattern) => ({
+  const monthlyPatternData = temporal_patterns?.map((p: any) => ({
     month: p.month_name?.trim() || `Month ${p.month_num}`,
     quantity: p.total_quantity,
     transactions: p.transaction_count,
@@ -365,11 +354,12 @@ export default function EnhancedSupplyDashboard() {
 
   const productRiskMatrix = supply_resilience?.slice(0, 10).map((p: SupplyResilience) => ({
     name: p.product_name,
-    x: p.volatility_coefficient, // Risk (volatility)
-    y: p.avg_transaction_size, // Performance
-    z: p.total_quantity, // Size
+    x: p.volatility_coefficient,
+    y: p.avg_transaction_size,
+    z: p.total_quantity,
     coverage: p.region_coverage,
-    category: p.product_category
+    category: p.product_category,
+    risk: p.supply_risk_level
   })) || [];
 
   const regionalPerformanceRadar = regional_consistency?.slice(0, 6).map((r: RegionalConsistency) => {
@@ -383,523 +373,464 @@ export default function EnhancedSupplyDashboard() {
     };
   }) || [];
 
-  const growthLeaders = regional_growth?.slice(0, 10).map((r: RegionalGrowth) => ({
-    name: r.region,
-    momGrowth: r.avg_mom_growth,
-    yoyGrowth: r.avg_yoy_growth,
-    quantity: r.total_quantity,
-    trend: r.avg_yoy_growth > 0 ? 'up' : 'down'
-  })) || [];
-
-  // Quality distribution for pie chart
-  const qualityDistribution = quality_overview ? [
-    { name: 'High Quality (≥95%)', value: quality_overview.high_quality_count, color: '#10B981' },
-    { name: 'Medium Quality (80-95%)', value: quality_overview.medium_quality_count, color: '#F59E0B' },
-    { name: 'Low Quality (<80%)', value: quality_overview.low_quality_count, color: '#EF4444' }
-  ] : [];
-
-  // Regional expansion visualization data
-  const expansionTrendData = regional_expansion?.map((e: RegionalExpansion) => ({
-    year: e.year,
-    regions: e.unique_regions,
-    newRegions: e.new_regions_count
-  })) || [];
-
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
+    <motion.div 
+      className="min-h-screen bg-gray-900 p-6"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Supply Chain Dashboard</h1>
-          <p className="text-gray-400">Regional petroleum supply analytics powered by PostgreSQL</p>
-        </div>
+        {/* Header with Controls */}
+        <motion.div variants={itemVariants} className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Supply Chain Analytics</h1>
+            <p className="text-gray-400">Comprehensive regional petroleum supply insights</p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={refreshData} variant="outline" size="sm">
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </div>
+        </motion.div>
         
-        {/* Global Filters - Hide company filter for supply */}
-        <GlobalFilters hideCompanyFilter={true} />
+        {/* Global Filters */}
+        <motion.div variants={itemVariants}>
+          <GlobalFilters hideCompanyFilter={true} />
+        </motion.div>
 
-        {/* Enhanced KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400 flex items-center gap-1">
-                <Activity className="h-3 w-3" />
-                Total Supply
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">
-                {formatQuantity(totalQuantity)}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {totalTransactions} transactions
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400 flex items-center gap-1">
-                <Globe className="h-3 w-3" />
-                Active Regions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">
-                {currentRegions}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {newRegionsIn2025 > 0 && `+${newRegionsIn2025} new in 2025`}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400 flex items-center gap-1">
-                <Package className="h-3 w-3" />
-                Products
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">
-                {product_distribution?.length || 0}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Product types
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400 flex items-center gap-1">
-                <Shield className="h-3 w-3" />
-                Data Quality
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${
-                avgQualityScore >= 0.95 ? 'text-green-400' :
-                avgQualityScore >= 0.8 ? 'text-yellow-400' : 'text-red-400'
-              }`}>
-                {(avgQualityScore * 100).toFixed(1)}%
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {dataIntegrity.toFixed(0)}% high quality
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400 flex items-center gap-1">
-                <Zap className="h-3 w-3" />
-                Supply Stability
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">
-                {(avgConsistencyScore * 100).toFixed(1)}%
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Consistency score
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400 flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                Top Region
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm font-bold text-white truncate">
-                {topRegion?.region || 'N/A'}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {formatQuantity(topRegion?.total_quantity || 0)}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Row 1: Regional Expansion & Supply Resilience */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ExpandableChart
-            title="Regional Expansion Analysis"
-            description="Evolution from 10 to 16 regions in 2025"
-            icon={<Globe className="h-5 w-5 text-white" />}
-          >
-            <ResponsiveContainer width="100%" height={350}>
-              <ComposedChart data={expansionTrendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="year" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
-                <YAxis stroke="#9CA3AF" tick={{ fontSize: 10 }} />
-                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                <Legend />
-                <Bar dataKey="regions" fill="#3B82F6" name="Total Regions" />
-                <Bar dataKey="newRegions" fill="#10B981" name="New Regions" />
-              </ComposedChart>
-            </ResponsiveContainer>
-            {latestExpansion?.new_regions_list && (
-              <div className="mt-4 p-3 bg-gray-800 rounded-lg border border-gray-700">
-                <p className="text-sm font-medium text-gray-300 mb-2">New Regions in 2025:</p>
-                <div className="flex flex-wrap gap-2">
-                  {latestExpansion.new_regions_list.map((region: string) => (
-                    <span key={region} className="px-2 py-1 bg-green-900/30 text-green-400 rounded text-xs">
-                      {region}
+        {/* Enhanced KPI Cards with real data */}
+        <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {/* Total Supply Card */}
+          <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-600/50 hover:border-blue-500/70 transition-all">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Droplets className="w-5 h-5 text-blue-400" />
+                {kpiData?.total_supply?.trend === 'up' ? (
+                  <div className="flex items-center gap-1">
+                    <ArrowUp className="w-4 h-4 text-green-400" />
+                    <span className="text-xs text-green-400">
+                      {kpiData?.total_supply?.change_percent > 0 ? '+' : ''}
+                      {kpiData?.total_supply?.change_percent?.toFixed(1)}%
                     </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </ExpandableChart>
-
-          <ExpandableChart
-            title="Product Supply Resilience"
-            description="Coverage analysis and volatility assessment by product"
-            icon={<Network className="h-5 w-5 text-white" />}
-          >
-            <ResponsiveContainer width="100%" height={350}>
-              <ScatterChart data={supply_resilience || []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis 
-                  dataKey="region_coverage" 
-                  stroke="#9CA3AF"
-                  tick={{ fontSize: 10 }}
-                  label={{ value: 'Regional Coverage', position: 'insideBottom', offset: -5, style: { fill: '#9CA3AF', fontSize: 11 } }}
-                />
-                <YAxis 
-                  dataKey="volatility_coefficient" 
-                  stroke="#9CA3AF" 
-                  tick={{ fontSize: 10 }}
-                  label={{ value: 'Volatility %', angle: -90, position: 'insideLeft', style: { fill: '#9CA3AF', fontSize: 11 } }}
-                />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
-                  content={({ payload }) => {
-                    if (payload && payload[0]) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-gray-800 border border-gray-700 p-3 rounded shadow-lg">
-                          <p className="text-white font-medium mb-2">{data.product_name}</p>
-                          <p className="text-gray-300 text-sm">Category: <span className="text-blue-400">{data.product_category}</span></p>
-                          <p className="text-gray-300 text-sm">Coverage: <span className="text-green-400">{data.region_coverage} regions</span></p>
-                          <p className="text-gray-300 text-sm">Volatility: <span className="text-yellow-400">{data.volatility_coefficient.toFixed(1)}%</span></p>
-                          <p className="text-gray-300 text-sm">Quantity: <span className="text-blue-300">{formatQuantity(data.total_quantity)}</span></p>
-                          <p className="text-gray-300 text-sm">Coverage Level: <span className={`${
-                            data.supply_coverage_level === 'Excellent Coverage' ? 'text-green-400' :
-                            data.supply_coverage_level === 'Good Coverage' ? 'text-blue-400' :
-                            data.supply_coverage_level === 'Moderate Coverage' ? 'text-yellow-400' : 
-                            'text-red-400'
-                          }`}>{data.supply_coverage_level}</span></p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Scatter dataKey="total_quantity" fill="#3B82F6">
-                  {(supply_resilience || []).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={
-                      entry.supply_coverage_level === 'Excellent Coverage' ? '#10B981' :
-                      entry.supply_coverage_level === 'Good Coverage' ? '#3B82F6' :
-                      entry.supply_coverage_level === 'Moderate Coverage' ? '#F59E0B' : 
-                      '#EF4444'
-                    } />
-                  ))}
-                </Scatter>
-              </ScatterChart>
-            </ResponsiveContainer>
-            <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
-              <div className="bg-gray-700 p-2 rounded">
-                <span className="text-gray-400">Products Tracked:</span>
-                <span className="text-white ml-2 font-medium">{supply_resilience?.length || 0}</span>
-              </div>
-              <div className="bg-gray-700 p-2 rounded">
-                <span className="text-gray-400">Avg Coverage:</span>
-                <span className="text-white ml-2 font-medium">
-                  {supply_resilience && supply_resilience.length > 0 ? 
-                    (supply_resilience.reduce((sum, p) => sum + (p.region_coverage || 0), 0) / supply_resilience.length).toFixed(1)
-                    : '0'} regions
-                </span>
-              </div>
-              <div className="bg-gray-700 p-2 rounded">
-                <span className="text-gray-400">Volatile Products:</span>
-                <span className="text-yellow-400 ml-2 font-medium">
-                  {supply_resilience?.filter(p => p.volatility_level === 'Volatile').length || 0}
-                </span>
-              </div>
-            </div>
-          </ExpandableChart>
-        </div>
-
-        {/* Row 2: Regional Performance & Monthly Patterns */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ExpandableChart
-            title="Regional Performance Matrix"
-            description="Multi-dimensional regional performance analysis"
-            icon={<Target className="h-5 w-5 text-white" />}
-          >
-            <ResponsiveContainer width="100%" height={350}>
-              <RadarChart data={regionalPerformanceRadar}>
-                <PolarGrid stroke="#374151" />
-                <PolarAngleAxis dataKey="region" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
-                <PolarRadiusAxis stroke="#9CA3AF" domain={[0, 100]} tick={{ fontSize: 10 }} />
-                <Radar name="Volume" dataKey="volume" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} />
-                <Radar name="Stability" dataKey="stability" stroke="#10B981" fill="#10B981" fillOpacity={0.3} />
-                <Radar name="Diversity" dataKey="diversity" stroke="#F59E0B" fill="#F59E0B" fillOpacity={0.3} />
-                <Radar name="Quality" dataKey="quality" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.3} />
-                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                <Legend />
-              </RadarChart>
-            </ResponsiveContainer>
-          </ExpandableChart>
-
-          <ExpandableChart
-            title="Monthly Supply Patterns"
-            description="Seasonal trends and supply rhythms"
-            icon={<Calendar className="h-5 w-5 text-white" />}
-          >
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={monthlyPatternData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="month" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
-                <YAxis stroke="#9CA3AF" tick={{ fontSize: 10 }} />
-                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                <Area 
-                  type="monotone" 
-                  dataKey="quantity" 
-                  stackId="1"
-                  stroke="#3B82F6" 
-                  fill="#3B82F6" 
-                  fillOpacity={0.6}
-                  name="Quantity"
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="products" 
-                  stackId="2"
-                  stroke="#10B981" 
-                  fill="#10B981" 
-                  fillOpacity={0.6}
-                  name="Product Diversity"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-            <div className="mt-4 flex justify-between text-sm">
-              <div>
-                <span className="text-gray-400">Peak Month:</span>
-                <span className="text-green-400 ml-2">
-                  {monthlyPatternData.reduce((max: any, month: any) => 
-                    month.quantity > (max?.quantity || 0) ? month : max, null)?.month || 'N/A'}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-400">Low Month:</span>
-                <span className="text-red-400 ml-2">
-                  {monthlyPatternData.reduce((min: any, month: any) => 
-                    month.quantity < (min?.quantity || Infinity) ? month : min, null)?.month || 'N/A'}
-                </span>
-              </div>
-            </div>
-          </ExpandableChart>
-        </div>
-
-        {/* Row 3: Growth Analytics & Data Quality */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ExpandableChart
-            title="Regional Growth Leaders"
-            description="Year-over-year regional growth performance"
-            icon={<TrendingUp className="h-5 w-5 text-white" />}
-          >
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={growthLeaders} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis type="number" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
-                <YAxis type="category" dataKey="name" stroke="#9CA3AF" width={100} tick={{ fontSize: 10 }} />
-                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                <Bar dataKey="yoyGrowth" fill="#10B981" name="YoY Growth %" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-            {yoy_growth && yoy_growth.length > 0 && (
-              <div className="mt-4 p-3 bg-gray-800 rounded-lg border border-gray-700">
-                <p className="text-sm font-medium text-gray-300 mb-2">Year-over-Year Supply Growth</p>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  {yoy_growth.slice(-3).map((year: GrowthData, idx: number) => (
-                    <div key={idx} className="bg-gray-700 p-2 rounded">
-                      <span className="text-gray-400">{year.year}:</span>
-                      <span className={`ml-1 font-medium ${
-                        (year.yoy_growth_rate || 0) > 0 ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {year.yoy_growth_rate ? `${year.yoy_growth_rate.toFixed(1)}%` : 'N/A'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </ExpandableChart>
-
-          <ExpandableChart
-            title="Data Quality Distribution"
-            description="Quality scores and outlier detection"
-            icon={<Shield className="h-5 w-5 text-white" />}
-          >
-            <ResponsiveContainer width="100%" height={350}>
-              <PieChart>
-                <Pie
-                  data={qualityDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {qualityDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            {quality_overview && (
-              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-gray-700 p-2 rounded">
-                  <span className="text-gray-400">Avg Score:</span>
-                  <span className="text-white ml-2 font-medium">
-                    {(quality_overview.avg_quality_score * 100).toFixed(2)}%
-                  </span>
-                </div>
-                <div className="bg-gray-700 p-2 rounded">
-                  <span className="text-gray-400">Outliers:</span>
-                  <span className="text-yellow-400 ml-2 font-medium">
-                    {quality_overview.outlier_count} ({quality_overview.total_records > 0 ? 
-                      ((quality_overview.outlier_count / quality_overview.total_records) * 100).toFixed(1) : '0'}%)
-                  </span>
-                </div>
-                <div className="bg-gray-700 p-2 rounded">
-                  <span className="text-gray-400">Std Dev:</span>
-                  <span className="text-white ml-2 font-medium">
-                    {(quality_overview.quality_stddev * 100).toFixed(3)}%
-                  </span>
-                </div>
-                <div className="bg-gray-700 p-2 rounded">
-                  <span className="text-gray-400">Total Records:</span>
-                  <span className="text-white ml-2 font-medium">
-                    {formatNumber(quality_overview.total_records)}
-                  </span>
-                </div>
-              </div>
-            )}
-          </ExpandableChart>
-        </div>
-
-        {/* Row 4: Historical Trends */}
-        <ExpandableChart
-          title="Historical Supply Trends"
-          description="Supply volume evolution across years"
-          icon={<Clock className="h-5 w-5 text-white" />}
-        >
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthly_trends || []}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis 
-                dataKey="period" 
-                stroke="#9CA3AF" 
-                tick={{ fontSize: 10 }}
-              />
-              <YAxis stroke="#9CA3AF" tick={{ fontSize: 10 }} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
-                labelFormatter={(value) => `Period: ${value}`}
-                formatter={(value: any, name: string) => {
-                  if (name === 'Total Quantity') return formatQuantity(value);
-                  if (name === 'Regions') return value;
-                  if (name === 'Products') return value;
-                  return value;
-                }}
-              />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="total_quantity" 
-                stroke="#3B82F6" 
-                strokeWidth={2}
-                name="Total Quantity"
-                dot={{ r: 3 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="regions" 
-                stroke="#10B981" 
-                strokeWidth={2}
-                name="Regions"
-                yAxisId="right"
-                dot={{ r: 3 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="products" 
-                stroke="#F59E0B" 
-                strokeWidth={2}
-                name="Products"
-                dot={{ r: 3 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-          <div className="mt-4 flex justify-around text-sm">
-            <div className="text-center">
-              <p className="text-gray-400">Current Regions</p>
-              <p className="font-medium text-white">{currentRegions}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-gray-400">Supply Growth</p>
-              <p className="font-medium text-white flex items-center justify-center gap-1">
-                {yoy_growth && yoy_growth.length > 1 && 
-                 yoy_growth[yoy_growth.length - 1].yoy_growth_rate > 0 ? (
-                  <>Growing <TrendingUp className="h-4 w-4 text-green-400" /></>
+                  </div>
+                ) : kpiData?.total_supply?.trend === 'down' ? (
+                  <div className="flex items-center gap-1">
+                    <ArrowDown className="w-4 h-4 text-red-400" />
+                    <span className="text-xs text-red-400">
+                      {kpiData?.total_supply?.change_percent?.toFixed(1)}%
+                    </span>
+                  </div>
                 ) : (
-                  <>Declining <TrendingDown className="h-4 w-4 text-red-400" /></>
+                  <Minus className="w-4 h-4 text-gray-400" />
                 )}
+              </div>
+              <p className="text-2xl font-bold text-white">
+                {kpiData?.total_supply?.formatted || formatQuantity(top_regions?.reduce((sum: number, r: Region) => sum + r.total_quantity, 0) || 0)}
               </p>
-            </div>
-            <div className="text-center">
-              <p className="text-gray-400">Coverage Status</p>
-              <p className={`font-medium ${
-                currentRegions >= 16 ? 'text-green-400' :
-                currentRegions >= 10 ? 'text-yellow-400' : 
-                'text-red-400'
-              }`}>
-                {currentRegions >= 16 ? 'Full Coverage' :
-                 currentRegions >= 10 ? 'Partial Coverage' : 
-                 'Limited Coverage'}
-              </p>
-            </div>
-          </div>
-        </ExpandableChart>
+              <p className="text-xs text-gray-400 mt-1">Total Supply</p>
+            </CardContent>
+          </Card>
 
-        {/* Data Source Footer */}
-        <div className="mt-8 p-4 bg-gray-800 border border-gray-700 rounded-lg">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <Info className="h-4 w-4 text-blue-400" />
-              <span className="text-gray-400">
-                Data Source: PostgreSQL Database • Table: petroverse.supply_data
-              </span>
-            </div>
-            <div className="text-gray-500">
-              Last Updated: {new Date().toLocaleString()} • 
-              Records: {quality_overview?.total_records || 0} • 
-              Period: {startDate || 'All'} to {endDate || 'Current'}
-            </div>
-          </div>
-        </div>
+          {/* Active Regions Card */}
+          <Card className="bg-gradient-to-br from-green-600/20 to-green-800/20 border-green-600/50 hover:border-green-500/70 transition-all">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Globe className="w-5 h-5 text-green-400" />
+                {kpiData?.average_growth?.growing_regions && (
+                  <Badge variant="outline" className="text-xs">
+                    {kpiData.average_growth.growing_regions} ↑
+                  </Badge>
+                )}
+              </div>
+              <p className="text-2xl font-bold text-white">
+                {kpiData?.active_regions || regional_consistency?.length || 0}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Active Regions</p>
+            </CardContent>
+          </Card>
+
+          {/* Products Card */}
+          <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-600/50 hover:border-purple-500/70 transition-all">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Package className="w-5 h-5 text-purple-400" />
+                <Activity className="w-4 h-4 text-purple-400" />
+              </div>
+              <p className="text-2xl font-bold text-white">
+                {kpiData?.active_products || product_distribution?.length || 0}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Products</p>
+            </CardContent>
+          </Card>
+
+          {/* Data Quality Card */}
+          <Card className="bg-gradient-to-br from-cyan-600/20 to-cyan-800/20 border-cyan-600/50 hover:border-cyan-500/70 transition-all">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Shield className="w-5 h-5 text-cyan-400" />
+                <div className="flex items-center gap-1">
+                  {kpiData?.quality_score?.status === 'good' ? (
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                  ) : kpiData?.quality_score?.status === 'warning' ? (
+                    <AlertCircle className="w-4 h-4 text-yellow-400" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-red-400" />
+                  )}
+                </div>
+              </div>
+              <p className={`text-2xl font-bold ${
+                kpiData?.quality_score?.value > 0.85 ? 'text-green-400' :
+                kpiData?.quality_score?.value > 0.75 ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                {((kpiData?.quality_score?.value || quality_overview?.avg_quality_score || 0) * 100).toFixed(1)}%
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Data Reliability</p>
+            </CardContent>
+          </Card>
+
+          {/* Growth Rate Card */}
+          <Card className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 border-orange-600/50 hover:border-orange-500/70 transition-all">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <TrendingUp className="w-5 h-5 text-orange-400" />
+                {kpiData?.average_growth?.direction === 'up' ? (
+                  <ArrowUp className="w-4 h-4 text-green-400" />
+                ) : kpiData?.average_growth?.direction === 'down' ? (
+                  <ArrowDown className="w-4 h-4 text-red-400" />
+                ) : (
+                  <Minus className="w-4 h-4 text-gray-400" />
+                )}
+              </div>
+              <p className="text-2xl font-bold text-white">
+                {kpiData?.average_growth?.formatted || 
+                  `${(yoy_growth?.[0]?.yoy_growth_rate || 0).toFixed(1)}%`}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Avg Growth</p>
+            </CardContent>
+          </Card>
+
+          {/* Risk Analysis Card */}
+          <Card className="bg-gradient-to-br from-red-600/20 to-red-800/20 border-red-600/50 hover:border-red-500/70 transition-all">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+                {kpiData?.risk_summary?.critical_risk_count > 0 && (
+                  <Badge variant="destructive" className="text-xs animate-pulse">
+                    {kpiData.risk_summary.critical_risk_count}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-2xl font-bold text-white">
+                {kpiData?.risk_summary?.total_at_risk || 
+                  supply_resilience?.filter((p: SupplyResilience) => p.supply_risk_level === 'High' || p.supply_risk_level === 'Critical').length || 0}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">At Risk</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* View Mode Tabs */}
+        <motion.div variants={itemVariants}>
+          <Tabs value={viewMode} onValueChange={(v: any) => setViewMode(v)} className="w-full">
+            <TabsList className="grid w-full grid-cols-4 bg-gray-800">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="regional">Regional Analysis</TabsTrigger>
+              <TabsTrigger value="products">Product Insights</TabsTrigger>
+              <TabsTrigger value="trends">Trends & Forecast</TabsTrigger>
+            </TabsList>
+
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Regional Performance Radar */}
+                <ExpandableChart
+                  title="Regional Performance Matrix"
+                  description="Multi-dimensional regional performance analysis"
+                  icon={<Gauge className="h-4 w-4" />}
+                >
+                  <ResponsiveContainer width="100%" height={400}>
+                    <RadarChart data={regionalPerformanceRadar}>
+                      <PolarGrid stroke="#374151" />
+                      <PolarAngleAxis dataKey="region" className="text-xs" />
+                      <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                      <Radar name="Volume" dataKey="volume" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} />
+                      <Radar name="Stability" dataKey="stability" stroke="#10B981" fill="#10B981" fillOpacity={0.3} />
+                      <Radar name="Diversity" dataKey="diversity" stroke="#F59E0B" fill="#F59E0B" fillOpacity={0.3} />
+                      <Radar name="Quality" dataKey="quality" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.3} />
+                      <Tooltip />
+                      <Legend />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </ExpandableChart>
+
+                {/* Monthly Patterns */}
+                <ExpandableChart
+                  title="Seasonal Supply Patterns"
+                  description="Monthly supply variations and trends"
+                  icon={<Calendar className="h-4 w-4" />}
+                >
+                  <ResponsiveContainer width="100%" height={400}>
+                    <ComposedChart data={monthlyPatternData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="month" />
+                      <YAxis yAxisId="left" orientation="left" />
+                      <YAxis yAxisId="right" orientation="right" />
+                      <Tooltip />
+                      <Legend />
+                      <Bar yAxisId="left" dataKey="quantity" fill="#3B82F6" name="Supply Volume" />
+                      <Line yAxisId="right" type="monotone" dataKey="regions" stroke="#10B981" name="Active Regions" strokeWidth={2} />
+                      <Line yAxisId="right" type="monotone" dataKey="products" stroke="#F59E0B" name="Product Diversity" strokeWidth={2} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </ExpandableChart>
+              </div>
+
+              {/* Product Risk Matrix */}
+              <ExpandableChart
+                title="Product Risk & Performance Matrix"
+                description="Volatility vs performance analysis by product"
+                icon={<AlertTriangle className="h-4 w-4" />}
+              >
+                <ResponsiveContainer width="100%" height={400}>
+                  <ScatterChart>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis type="number" dataKey="x" name="Volatility" unit="%" />
+                    <YAxis type="number" dataKey="y" name="Avg Transaction" />
+                    <ZAxis type="number" dataKey="z" range={[50, 400]} />
+                    <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                    <Legend />
+                    <Scatter
+                      name="Products"
+                      data={productRiskMatrix}
+                      fill={(entry: any) => {
+                        if (entry.risk === 'Critical') return '#EF4444';
+                        if (entry.risk === 'High') return '#F59E0B';
+                        if (entry.risk === 'Medium') return '#3B82F6';
+                        return '#10B981';
+                      }}
+                    />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </ExpandableChart>
+            </TabsContent>
+
+            {/* Regional Analysis Tab */}
+            <TabsContent value="regional" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Regional Rankings */}
+                <ExpandableChart
+                  title="Regional Supply Rankings"
+                  description="Top performing regions by volume"
+                  icon={<MapPin className="h-4 w-4" />}
+                >
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={top_regions?.slice(0, 10)} layout="horizontal">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="region" type="category" width={100} />
+                      <Tooltip />
+                      <Bar dataKey="total_quantity" fill="#3B82F6" name="Total Supply">
+                        <LabelList dataKey="market_share_percent" position="right" formatter={(v: number) => `${v.toFixed(1)}%`} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ExpandableChart>
+
+                {/* Regional Growth Comparison */}
+                <ExpandableChart
+                  title="Regional Growth Dynamics"
+                  description="Year-over-year growth by region"
+                  icon={<TrendingUp className="h-4 w-4" />}
+                >
+                  <ResponsiveContainer width="100%" height={400}>
+                    <ComposedChart data={regional_growth?.slice(0, 10)}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="region" angle={-45} textAnchor="end" height={100} />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="avg_yoy_growth" fill="#10B981" name="YoY Growth %" />
+                      <Bar dataKey="avg_mom_growth" fill="#F59E0B" name="MoM Growth %" />
+                      <Line type="monotone" dataKey="total_quantity" stroke="#8B5CF6" strokeWidth={2} name="Total Volume" yAxisId="right" />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </ExpandableChart>
+              </div>
+
+              {/* Regional Consistency Analysis */}
+              <ExpandableChart
+                title="Supply Chain Stability by Region"
+                description="Volatility and consistency metrics"
+                icon={<Shield className="h-4 w-4" />}
+              >
+                <ResponsiveContainer width="100%" height={400}>
+                  <AreaChart data={regional_consistency?.slice(0, 15)}>
+                    <defs>
+                      <linearGradient id="colorVolatility" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#EF4444" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#EF4444" stopOpacity={0.1}/>
+                      </linearGradient>
+                      <linearGradient id="colorQuality" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="region" angle={-45} textAnchor="end" height={100} />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Area type="monotone" dataKey="volatility_coefficient" stroke="#EF4444" fillOpacity={1} fill="url(#colorVolatility)" name="Volatility %" />
+                    <Area type="monotone" dataKey="overall_quality_score" stroke="#10B981" fillOpacity={1} fill="url(#colorQuality)" name="Quality Score" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ExpandableChart>
+            </TabsContent>
+
+            {/* Product Insights Tab */}
+            <TabsContent value="products" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Product Distribution */}
+                <ExpandableChart
+                  title="Product Portfolio Distribution"
+                  description="Supply volume by product category"
+                  icon={<Package className="h-4 w-4" />}
+                >
+                  <ResponsiveContainer width="100%" height={400}>
+                    <Treemap
+                      data={product_distribution?.slice(0, 15).map((p: ProductDistribution) => ({
+                        name: p.product,
+                        size: p.total_quantity,
+                        category: p.product_category,
+                        regions: p.region_count
+                      }))}
+                      dataKey="size"
+                      aspectRatio={4/3}
+                      stroke="#fff"
+                      fill="#3B82F6"
+                    >
+                      <Tooltip />
+                    </Treemap>
+                  </ResponsiveContainer>
+                </ExpandableChart>
+
+                {/* Product Coverage */}
+                <ExpandableChart
+                  title="Product Regional Coverage"
+                  description="Number of regions per product"
+                  icon={<Network className="h-4 w-4" />}
+                >
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={product_distribution?.slice(0, 10)}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="product" angle={-45} textAnchor="end" height={100} />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="region_count" fill="#10B981" name="Region Coverage">
+                        {product_distribution?.slice(0, 10).map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ExpandableChart>
+              </div>
+
+              {/* Product Risk Analysis */}
+              <ExpandableChart
+                title="Product Supply Risk Assessment"
+                description="Risk levels by product category"
+                icon={<AlertCircle className="h-4 w-4" />}
+              >
+                <ResponsiveContainer width="100%" height={400}>
+                  <ComposedChart data={supply_resilience?.slice(0, 15)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="product_name" angle={-45} textAnchor="end" height={120} />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="supply_stability_score" fill="#10B981" name="Stability Score" />
+                    <Bar dataKey="volatility_coefficient" fill="#EF4444" name="Volatility %" />
+                    <Line type="monotone" dataKey="region_coverage" stroke="#3B82F6" strokeWidth={2} name="Region Coverage" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </ExpandableChart>
+            </TabsContent>
+
+            {/* Trends & Forecast Tab */}
+            <TabsContent value="trends" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* YoY Growth Trends */}
+                <ExpandableChart
+                  title="Year-over-Year Growth Trends"
+                  description="Historical growth patterns"
+                  icon={<TrendingUp className="h-4 w-4" />}
+                >
+                  <ResponsiveContainer width="100%" height={400}>
+                    <AreaChart data={yoy_growth}>
+                      <defs>
+                        <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="year" />
+                      <YAxis />
+                      <Tooltip />
+                      <Area type="monotone" dataKey="yoy_growth_rate" stroke="#10B981" fillOpacity={1} fill="url(#colorGrowth)" name="Growth Rate %" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </ExpandableChart>
+
+                {/* Quarter-over-Quarter Trends */}
+                <ExpandableChart
+                  title="Quarterly Performance Trends"
+                  description="Quarter-over-quarter analysis"
+                  icon={<Activity className="h-4 w-4" />}
+                >
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={qoq_growth}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="quarter" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="qoq_growth_rate" stroke="#3B82F6" strokeWidth={2} name="QoQ Growth %" />
+                      <Line type="monotone" dataKey="total_quantity" stroke="#F59E0B" strokeWidth={2} name="Total Volume" yAxisId="right" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ExpandableChart>
+              </div>
+
+              {/* Regional Expansion Timeline */}
+              <ExpandableChart
+                title="Regional Market Expansion"
+                description="Growth in regional coverage over time"
+                icon={<Globe className="h-4 w-4" />}
+              >
+                <ResponsiveContainer width="100%" height={400}>
+                  <ComposedChart data={regional_expansion}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="unique_regions" fill="#3B82F6" name="Active Regions" />
+                    <Line type="monotone" dataKey="new_regions_count" stroke="#10B981" strokeWidth={2} name="New Regions Added" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </ExpandableChart>
+            </TabsContent>
+          </Tabs>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

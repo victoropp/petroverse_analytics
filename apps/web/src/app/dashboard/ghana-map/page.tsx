@@ -294,6 +294,7 @@ export default function GhanaMapDashboard() {
   const [compareMode, setCompareMode] = useState(false);
   const [selectedMapRegions, setSelectedMapRegions] = useState<string[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [kpiData, setKpiData] = useState<any>(null);
   const mapRef = useRef<any>(null);
 
   // Initialize filters with dynamic date range from database
@@ -369,6 +370,7 @@ export default function GhanaMapDashboard() {
       // Debounce the fetch to avoid too many requests
       fetchTimeoutRef.current = setTimeout(() => {
         fetchMapData();
+        fetchKPIData(); // Fetch KPI data alongside map data
       }, 500); // 500ms debounce delay
     }
 
@@ -388,6 +390,7 @@ export default function GhanaMapDashboard() {
     const interval = setInterval(() => {
       if (startDate && endDate && !loading) {
         fetchMapData();
+        fetchKPIData();
       }
     }, 120000); // Increased to 2 minutes to reduce conflicts
     return () => clearInterval(interval);
@@ -525,6 +528,40 @@ export default function GhanaMapDashboard() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch KPI data from the new endpoint
+  const fetchKPIData = async () => {
+    try {
+      // Build parameters
+      const params = new URLSearchParams();
+      
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      
+      if (selectedRegions.length > 0) {
+        params.append('regions', selectedRegions.join(','));
+      }
+      
+      if (selectedProducts.length > 0) {
+        params.append('products', selectedProducts.join(','));
+      }
+      
+      params.append('volume_unit', volumeUnit);
+
+      const response = await fetch(`http://localhost:8003/api/v2/supply/kpi?${params}`, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setKpiData(data);
+      } else {
+        console.error('Failed to fetch KPI data');
+      }
+    } catch (error) {
+      console.error('Error fetching KPI data:', error);
     }
   };
 
@@ -866,7 +903,7 @@ export default function GhanaMapDashboard() {
                 <Share2 className="w-4 h-4 mr-2" />
                 Share
               </Button>
-              <Button onClick={() => fetchMapData()} variant="outline" size="sm">
+              <Button onClick={() => { fetchMapData(); fetchKPIData(); }} variant="outline" size="sm">
                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
@@ -1536,64 +1573,165 @@ export default function GhanaMapDashboard() {
 
           {/* Side Panel - Analytics & Details */}
           <motion.div variants={itemVariants} className="space-y-6">
-            {/* KPI Cards */}
+            {/* Enhanced KPI Cards with Real Data */}
             <div className="grid grid-cols-2 gap-3">
-              <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-600/50">
+              {/* Total Supply Card */}
+              <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-600/50 hover:border-blue-500/70 transition-all">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <Droplets className="w-5 h-5 text-blue-400" />
-                    <ArrowUp className="w-4 h-4 text-green-400" />
+                    {kpiData?.kpi_metrics?.total_supply?.trend === 'up' ? (
+                      <div className="flex items-center gap-1">
+                        <ArrowUp className="w-4 h-4 text-green-400" />
+                        <span className="text-xs text-green-400">
+                          {kpiData?.kpi_metrics?.total_supply?.change_percent > 0 ? '+' : ''}
+                          {kpiData?.kpi_metrics?.total_supply?.change_percent?.toFixed(1)}%
+                        </span>
+                      </div>
+                    ) : kpiData?.kpi_metrics?.total_supply?.trend === 'down' ? (
+                      <div className="flex items-center gap-1">
+                        <ArrowDown className="w-4 h-4 text-red-400" />
+                        <span className="text-xs text-red-400">
+                          {kpiData?.kpi_metrics?.total_supply?.change_percent?.toFixed(1)}%
+                        </span>
+                      </div>
+                    ) : (
+                      <Minus className="w-4 h-4 text-gray-400" />
+                    )}
                   </div>
-                  <p className="text-2xl font-bold mt-2">
-                    {formatVolume(regionalData.reduce((acc, r) => acc + r.total_quantity, 0), regionalData.reduce((acc, r) => acc + (r.total_quantity_mt || 0), 0))}
+                  <p className="text-2xl font-bold">
+                    {kpiData?.kpi_metrics?.total_supply?.formatted || 
+                     formatVolume(regionalData.reduce((acc, r) => acc + r.total_quantity, 0), 
+                                 regionalData.reduce((acc, r) => acc + (r.total_quantity_mt || 0), 0))}
                   </p>
-                  <p className="text-xs text-gray-400">Total Supply</p>
+                  <p className="text-xs text-gray-400 mt-1">Total Supply</p>
+                  {kpiData?.summary_stats?.active_regions && (
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {kpiData.summary_stats.active_regions} regions active
+                    </p>
+                  )}
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-br from-green-600/20 to-green-800/20 border-green-600/50">
+              {/* Average Growth Card */}
+              <Card className="bg-gradient-to-br from-green-600/20 to-green-800/20 border-green-600/50 hover:border-green-500/70 transition-all">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <TrendingUp className="w-5 h-5 text-green-400" />
-                    <Badge variant="outline" className="text-xs">
-                      +{regionalData.filter(r => (r.growth_rate || 0) > 0).length}
-                    </Badge>
+                    {kpiData?.kpi_metrics?.average_growth?.growing_regions && (
+                      <Badge variant="outline" className="text-xs">
+                        {kpiData.kpi_metrics.average_growth.growing_regions} ↑
+                      </Badge>
+                    )}
                   </div>
-                  <p className="text-2xl font-bold mt-2">
-                    {regionalData.reduce((acc, r) => acc + (r.growth_rate || 0), 0) / regionalData.length || 0}%
+                  <p className="text-2xl font-bold">
+                    {kpiData?.kpi_metrics?.average_growth?.formatted || 
+                     `${(regionalData.reduce((acc, r) => acc + (r.growth_rate || 0), 0) / regionalData.length || 0).toFixed(1)}%`}
                   </p>
-                  <p className="text-xs text-gray-400">Avg Growth</p>
+                  <p className="text-xs text-gray-400 mt-1">Avg Growth</p>
+                  {kpiData?.summary_stats?.recent_trend !== undefined && (
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Trend: {kpiData.summary_stats.recent_trend > 0 ? '↑' : kpiData.summary_stats.recent_trend < 0 ? '↓' : '→'} 
+                      {Math.abs(kpiData.summary_stats.recent_trend).toFixed(1)}%
+                    </p>
+                  )}
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-600/50">
+              {/* Data Reliability Card */}
+              <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-600/50 hover:border-purple-500/70 transition-all">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <Shield className="w-5 h-5 text-purple-400" />
-                    <Activity className="w-4 h-4 text-purple-400" />
+                    <div className="flex items-center gap-1">
+                      {kpiData?.kpi_metrics?.average_quality?.status === 'good' ? (
+                        <Check className="w-4 h-4 text-green-400" />
+                      ) : kpiData?.kpi_metrics?.average_quality?.status === 'warning' ? (
+                        <AlertCircle className="w-4 h-4 text-yellow-400" />
+                      ) : (
+                        <Activity className="w-4 h-4 text-purple-400" />
+                      )}
+                      <span className={`text-xs ${
+                        kpiData?.kpi_metrics?.average_quality?.value > 0.85 ? 'text-green-400' : 
+                        kpiData?.kpi_metrics?.average_quality?.value > 0.75 ? 'text-yellow-400' : 'text-red-400'
+                      }`}>
+                        {kpiData?.kpi_metrics?.average_quality?.value > 0.85 ? 'Good' : 
+                         kpiData?.kpi_metrics?.average_quality?.value > 0.75 ? 'Fair' : 'Low'}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold mt-2">
-                    {(regionalData.reduce((acc, r) => acc + (r.quality_score || 0), 0) / regionalData.length || 0).toFixed(2)}
+                  <p className="text-2xl font-bold">
+                    {kpiData?.kpi_metrics?.average_quality?.formatted || 
+                     (regionalData.reduce((acc, r) => acc + (r.quality_score || 0), 0) / regionalData.length || 0).toFixed(2)}
                   </p>
-                  <p className="text-xs text-gray-400">Avg Quality</p>
+                  <p className="text-xs text-gray-400 mt-1">Data Reliability</p>
+                  {kpiData?.summary_stats?.active_products && (
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {kpiData.summary_stats.active_products} products tracked
+                    </p>
+                  )}
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 border-orange-600/50">
+              {/* Risk Analysis Card */}
+              <Card className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 border-orange-600/50 hover:border-orange-500/70 transition-all">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <AlertCircle className="w-5 h-5 text-orange-400" />
-                    <Badge variant="outline" className="text-xs">
-                      {regionalData.filter(r => r.risk_level === 'high' || r.risk_level === 'critical').length}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      {kpiData?.kpi_metrics?.risk_summary?.critical_risk_count > 0 && (
+                        <Badge variant="destructive" className="text-xs animate-pulse">
+                          {kpiData.kpi_metrics.risk_summary.critical_risk_count} Critical
+                        </Badge>
+                      )}
+                      {kpiData?.kpi_metrics?.risk_summary?.high_risk_count > 0 && (
+                        <Badge variant="outline" className="text-xs border-orange-500 text-orange-400">
+                          {kpiData.kpi_metrics.risk_summary.high_risk_count} High
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold mt-2">
-                    {regionalData.filter(r => r.risk_level === 'high' || r.risk_level === 'critical').length}
+                  <p className="text-2xl font-bold">
+                    {kpiData?.kpi_metrics?.risk_summary?.total_at_risk || 
+                     regionalData.filter(r => r.risk_level === 'high' || r.risk_level === 'critical').length}
                   </p>
-                  <p className="text-xs text-gray-400">High+ Risk</p>
+                  <p className="text-xs text-gray-400 mt-1">At Risk</p>
+                  {kpiData?.kpi_metrics?.risk_summary?.max_volatility !== undefined && (
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Max volatility: {kpiData.kpi_metrics.risk_summary.max_volatility.toFixed(1)}%
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>
+
+            {/* Additional Summary Stats Card */}
+            {kpiData?.summary_stats && (
+              <Card className="bg-gray-800/50 backdrop-blur border-gray-700">
+                <CardContent className="p-3">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Active Months:</span>
+                      <span className="text-gray-300 font-medium">{kpiData.summary_stats.active_months}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Transactions:</span>
+                      <span className="text-gray-300 font-medium">{kpiData.summary_stats.total_transactions?.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Daily Avg:</span>
+                      <span className="text-gray-300 font-medium">
+                        {formatVolume(kpiData.summary_stats.avg_daily_volume, undefined)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Products:</span>
+                      <span className="text-gray-300 font-medium">{kpiData.summary_stats.active_products}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Top Regions Ranking */}
             <Card className="bg-gray-800/50 backdrop-blur border-gray-700">

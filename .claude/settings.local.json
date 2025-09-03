@@ -14,7 +14,8 @@
       "Bash(\"C:\\Program Files\\PostgreSQL\\17\\bin\\psql\" -U postgres -p 5432 -d petroverse_analytics -c \"SELECT DISTINCT data_quality_score FROM petroverse.supply_data WHERE data_quality_score IS NOT NULL ORDER BY data_quality_score LIMIT 20;\" -h localhost)",
       "Bash(\"C:\\Program Files\\PostgreSQL\\17\\bin\\psql\" -U postgres -p 5432 -d petroverse_analytics -c \"SELECT data_quality_score, COUNT(*) as count FROM petroverse.supply_data WHERE data_quality_score IS NOT NULL GROUP BY data_quality_score ORDER BY data_quality_score;\" -h localhost)",
       "Read(C:\\Users\\victo\\Documents\\Data_Science_Projects\\petroverse_Analytics\\apps\\web\\src\\app\\dashboard\\ghana-map/**)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": [],

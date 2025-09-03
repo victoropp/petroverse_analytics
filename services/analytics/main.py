@@ -13,11 +13,16 @@ import os
 from datetime import datetime, timedelta
 import jwt
 import json
+import logging
 from pydantic import BaseModel, Field
 import numpy as np
 from enum import Enum
 import hashlib
 import secrets
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 from bdc_analytics import get_bdc_comprehensive_analytics
 from omc_analytics import get_omc_comprehensive_analytics
 from advanced_analytics import (
@@ -32,6 +37,7 @@ from advanced_analytics import (
     get_volume_forecast
 )
 from supply_enhanced_analytics import (
+    get_supply_kpi_metrics,
     get_supply_performance_metrics,
     get_supply_regional_analytics,
     get_supply_growth_analytics,
@@ -2389,6 +2395,35 @@ async def get_supply_regions():
                 "total_quantity": float(row['total_quantity']) if row['total_quantity'] else 0
             })
         return {"regions": regions}
+
+@app.get("/api/v2/supply/kpi")
+async def get_supply_kpi(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    regions: Optional[str] = None,
+    products: Optional[str] = None,
+    volume_unit: str = 'liters'
+):
+    """Get comprehensive KPI metrics for the Ghana map dashboard"""
+    try:
+        # Process parameters
+        region_ids = regions.split(',') if regions else None
+        product_ids = None  # Products are strings in supply data, not IDs
+        
+        # Get KPI metrics
+        result = await get_supply_kpi_metrics(
+            db_pool,
+            start_date=start_date,
+            end_date=end_date,
+            region_ids=region_ids,
+            product_ids=product_ids,
+            volume_unit=volume_unit
+        )
+        
+        return result
+    except Exception as e:
+        logger.error(f"Error in get_supply_kpi: {e}")
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     uvicorn.run(

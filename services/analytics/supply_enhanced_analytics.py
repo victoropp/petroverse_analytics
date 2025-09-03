@@ -13,6 +13,314 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+async def get_supply_kpi_metrics(
+    pool: asyncpg.Pool,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    region_ids: Optional[List[str]] = None,
+    product_ids: Optional[List[int]] = None,
+    volume_unit: str = 'liters'
+) -> Dict[str, Any]:
+    """
+    Get comprehensive KPI metrics for the Ghana map dashboard
+    Returns key performance indicators including total supply, growth rates, quality scores, and risk analysis
+    """
+    
+    async with pool.acquire() as conn:
+        # Build filter conditions
+        filters = []
+        params = []
+        param_count = 0
+        
+        if start_date:
+            param_count += 1
+            filters.append(f"s.period_date >= ${param_count}")
+            params.append(datetime.strptime(start_date, '%Y-%m-%d').date())
+        
+        if end_date:
+            param_count += 1
+            filters.append(f"s.period_date <= ${param_count}")
+            params.append(datetime.strptime(end_date, '%Y-%m-%d').date())
+        
+        if region_ids:
+            param_count += 1
+            filters.append(f"s.region = ANY(${param_count})")
+            params.append(region_ids)
+        
+        # Note: In supply_data, products are stored as strings not IDs
+        # The product_ids parameter is kept for interface consistency but not used
+        # Filtering would be done by product names if needed
+        
+        where_clause = " AND ".join(filters) if filters else "1=1"
+        
+        # 1. Total Supply Metrics
+        supply_query = f"""
+        SELECT 
+            SUM(s.volume_liters) as total_liters,
+            SUM(s.volume_mt) as total_mt,
+            COUNT(DISTINCT s.region) as active_regions,
+            COUNT(DISTINCT s.product) as active_products,
+            COUNT(DISTINCT DATE_TRUNC('month', s.period_date)) as active_months,
+            AVG(s.data_quality_score) as avg_quality_score,
+            COUNT(*) as total_transactions
+        FROM petroverse.supply_data s
+        WHERE {where_clause}
+        """
+        
+        supply_metrics = await conn.fetchrow(supply_query, *params)
+        
+        # 2. Growth Metrics - Compare with previous period
+        growth_query = f"""
+        WITH current_period AS (
+            SELECT 
+                SUM(s.volume_liters) as current_volume,
+                COUNT(DISTINCT s.region) as current_regions
+            FROM petroverse.supply_data s
+            WHERE {where_clause}
+        ),
+        previous_period AS (
+            SELECT 
+                SUM(s.volume_liters) as previous_volume,
+                COUNT(DISTINCT s.region) as previous_regions
+            FROM petroverse.supply_data s
+            WHERE s.period_date >= ${param_count + 1} 
+            AND s.period_date <= ${param_count + 2}
+            {' AND s.region = ANY($' + str(param_count + 3) + ')' if region_ids else ''}
+            {' AND s.product = ANY($' + str(param_count + 4) + ')' if product_ids else ''}
+        )
+        SELECT 
+            c.current_volume,
+            p.previous_volume,
+            CASE 
+                WHEN p.previous_volume > 0 THEN 
+                    ((c.current_volume - p.previous_volume) / p.previous_volume) * 100
+                ELSE 0 
+            END as volume_growth_rate,
+            c.current_regions,
+            p.previous_regions,
+            c.current_regions - COALESCE(p.previous_regions, 0) as new_regions
+        FROM current_period c, previous_period p
+        """
+        
+        # Calculate previous period dates
+        if start_date and end_date:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d').date()
+            period_length = (end_dt - start_dt).days
+            prev_start = start_dt - timedelta(days=period_length)
+            prev_end = start_dt - timedelta(days=1)
+            
+            growth_params = params + [prev_start, prev_end]
+            if region_ids:
+                growth_params.append(region_ids)
+            if product_ids:
+                growth_params.append(product_ids)
+            
+            growth_metrics = await conn.fetchrow(growth_query, *growth_params)
+        else:
+            growth_metrics = None
+        
+        # 3. Regional Performance Metrics
+        regional_query = f"""
+        SELECT 
+            s.region,
+            SUM(s.volume_liters) as total_quantity,
+            COUNT(DISTINCT s.product) as product_count,
+            AVG(s.data_quality_score) as quality_score,
+            STDDEV(s.volume_liters) as volume_volatility,
+            CASE 
+                WHEN STDDEV(s.volume_liters) > 0 AND AVG(s.volume_liters) > 0 THEN
+                    (STDDEV(s.volume_liters) / AVG(s.volume_liters)) * 100
+                ELSE 0
+            END as volatility_coefficient
+        FROM petroverse.supply_data s
+        WHERE {where_clause}
+        GROUP BY s.region
+        ORDER BY total_quantity DESC
+        """
+        
+        regional_data = await conn.fetch(regional_query, *params)
+        
+        # 4. Risk Analysis
+        risk_analysis_query = f"""
+        WITH risk_metrics AS (
+            SELECT 
+                s.region,
+                SUM(s.volume_liters) as total_volume,
+                AVG(s.data_quality_score) as quality_score,
+                STDDEV(s.volume_liters) / NULLIF(AVG(s.volume_liters), 0) as volatility,
+                COUNT(DISTINCT s.product) as product_diversity
+            FROM petroverse.supply_data s
+            WHERE {where_clause}
+            GROUP BY s.region
+        ),
+        risk_thresholds AS (
+            SELECT 
+                PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY total_volume) as volume_p25,
+                PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY volatility) as volatility_p75,
+                PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY quality_score) as quality_p25
+            FROM risk_metrics
+        )
+        SELECT 
+            COUNT(CASE 
+                WHEN rm.total_volume < rt.volume_p25 
+                  OR rm.volatility > rt.volatility_p75 
+                  OR rm.quality_score < rt.quality_p25 
+                THEN 1 
+            END) as high_risk_regions,
+            COUNT(CASE 
+                WHEN rm.volatility > rt.volatility_p75 * 1.5
+                  OR rm.quality_score < rt.quality_p25 * 0.8
+                THEN 1 
+            END) as critical_risk_regions,
+            AVG(rm.volatility) * 100 as avg_volatility_percent,
+            MIN(rm.quality_score) as min_quality_score,
+            MAX(rm.volatility) * 100 as max_volatility_percent
+        FROM risk_metrics rm, risk_thresholds rt
+        """
+        
+        risk_metrics = await conn.fetchrow(risk_analysis_query, *params)
+        
+        # 5. Top Performing Regions
+        top_regions_query = f"""
+        SELECT 
+            s.region,
+            SUM(s.volume_liters) as total_quantity,
+            SUM(s.volume_mt) as total_quantity_mt,
+            COUNT(DISTINCT s.product) as product_count,
+            AVG(s.data_quality_score) as quality_score
+        FROM petroverse.supply_data s
+        WHERE {where_clause}
+        GROUP BY s.region
+        ORDER BY total_quantity DESC
+        LIMIT 5
+        """
+        
+        top_regions = await conn.fetch(top_regions_query, *params)
+        
+        # 6. Recent Trends (Last 7 days of data within the period)
+        trend_query = f"""
+        WITH daily_volumes AS (
+            SELECT 
+                s.period_date,
+                SUM(s.volume_liters) as daily_volume
+            FROM petroverse.supply_data s
+            WHERE {where_clause}
+            GROUP BY s.period_date
+            ORDER BY s.period_date DESC
+            LIMIT 7
+        ),
+        aggregated AS (
+            SELECT 
+                AVG(daily_volume) as avg_daily_volume,
+                MAX(period_date) as latest_date,
+                MIN(period_date) as earliest_date,
+                MAX(CASE WHEN period_date = (SELECT MAX(period_date) FROM daily_volumes) THEN daily_volume END) as latest_volume,
+                MAX(CASE WHEN period_date = (SELECT MIN(period_date) FROM daily_volumes) THEN daily_volume END) as earliest_volume
+            FROM daily_volumes
+        )
+        SELECT 
+            avg_daily_volume,
+            CASE 
+                WHEN earliest_volume > 0 AND latest_volume IS NOT NULL AND earliest_volume IS NOT NULL THEN
+                    ((latest_volume - earliest_volume) / earliest_volume) * 100
+                ELSE 0
+            END as recent_trend_percent
+        FROM aggregated
+        """
+        
+        trend_metrics = await conn.fetchrow(trend_query, *params)
+        
+        # Process and format results
+        total_volume = float(supply_metrics['total_liters'] or 0)
+        total_volume_mt = float(supply_metrics['total_mt'] or 0)
+        
+        # Calculate growth indicators
+        growth_rate = 0
+        growth_direction = 'stable'
+        if growth_metrics and growth_metrics['volume_growth_rate']:
+            growth_rate = float(growth_metrics['volume_growth_rate'])
+            if growth_rate > 5:
+                growth_direction = 'up'
+            elif growth_rate < -5:
+                growth_direction = 'down'
+        
+        # Process regional data for risk classification
+        regions_by_risk = {'low': 0, 'medium': 0, 'high': 0, 'critical': 0}
+        for region in regional_data:
+            volatility = float(region['volatility_coefficient'] or 0)
+            quality = float(region['quality_score'] or 1)
+            
+            if volatility > 50 or quality < 0.7:
+                regions_by_risk['critical'] += 1
+            elif volatility > 30 or quality < 0.8:
+                regions_by_risk['high'] += 1
+            elif volatility > 15 or quality < 0.9:
+                regions_by_risk['medium'] += 1
+            else:
+                regions_by_risk['low'] += 1
+        
+        return {
+            'kpi_metrics': {
+                'total_supply': {
+                    'value_liters': float(total_volume),
+                    'value_mt': float(total_volume_mt),
+                    'unit': volume_unit,
+                    'formatted': format_volume_value(total_volume if volume_unit == 'liters' else total_volume_mt, volume_unit),
+                    'trend': growth_direction,
+                    'change_percent': growth_rate
+                },
+                'average_growth': {
+                    'value': growth_rate,
+                    'formatted': f"{growth_rate:+.1f}%",
+                    'direction': growth_direction,
+                    'growing_regions': len([r for r in regional_data if float(r['total_quantity'] or 0) > 0])
+                },
+                'average_quality': {
+                    'value': float(supply_metrics['avg_quality_score'] or 0),
+                    'formatted': f"{float(supply_metrics['avg_quality_score'] or 0):.2f}",
+                    'status': 'good' if float(supply_metrics['avg_quality_score'] or 0) > 0.85 else 'warning'
+                },
+                'risk_summary': {
+                    'high_risk_count': int(risk_metrics['high_risk_regions'] or 0),
+                    'critical_risk_count': int(risk_metrics['critical_risk_regions'] or 0),
+                    'total_at_risk': int(risk_metrics['high_risk_regions'] or 0) + int(risk_metrics['critical_risk_regions'] or 0),
+                    'regions_by_risk': regions_by_risk,
+                    'max_volatility': float(risk_metrics['max_volatility_percent'] or 0)
+                }
+            },
+            'summary_stats': {
+                'active_regions': int(supply_metrics['active_regions'] or 0),
+                'active_products': int(supply_metrics['active_products'] or 0),
+                'active_months': int(supply_metrics['active_months'] or 0),
+                'total_transactions': int(supply_metrics['total_transactions'] or 0),
+                'avg_daily_volume': float(trend_metrics['avg_daily_volume'] or 0) if trend_metrics else 0,
+                'recent_trend': float(trend_metrics['recent_trend_percent'] or 0) if trend_metrics else 0
+            },
+            'top_regions': [
+                {
+                    'region': r['region'],
+                    'total_quantity': float(r['total_quantity'] or 0),
+                    'total_quantity_mt': float(r['total_quantity_mt'] or 0),
+                    'product_count': int(r['product_count'] or 0),
+                    'quality_score': float(r['quality_score'] or 0)
+                }
+                for r in top_regions
+            ],
+            'timestamp': datetime.now().isoformat()
+        }
+
+def format_volume_value(value: float, unit: str) -> str:
+    """Format volume values with appropriate units"""
+    if value >= 1e9:
+        return f"{value/1e9:.2f}B {unit.upper() if unit == 'mt' else 'L'}"
+    elif value >= 1e6:
+        return f"{value/1e6:.2f}M {unit.upper() if unit == 'mt' else 'L'}"
+    elif value >= 1e3:
+        return f"{value/1e3:.2f}K {unit.upper() if unit == 'mt' else 'L'}"
+    else:
+        return f"{value:.0f} {unit.upper() if unit == 'mt' else 'L'}"
+
 async def get_supply_performance_metrics(
     pool: asyncpg.Pool,
     start_date: Optional[str] = None,

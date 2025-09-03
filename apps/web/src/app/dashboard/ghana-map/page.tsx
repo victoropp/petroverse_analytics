@@ -1439,19 +1439,6 @@ export default function GhanaMapDashboard() {
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     />
                     
-                    {/* Ghana Country Border */}
-                    <GeoJSON
-                      data={ghanaBoundary}
-                      style={{
-                        color: '#1F2937',
-                        weight: 3,
-                        opacity: 0.8,
-                        fillColor: 'transparent',
-                        fillOpacity: 0,
-                        dashArray: '10, 5'
-                      }}
-                    />
-                    
                     <LayersControl position="topright">
                       <LayersControlBaseLayer checked name="Light">
                         <TileLayer

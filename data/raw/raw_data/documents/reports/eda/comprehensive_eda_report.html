@@ -1,0 +1,245 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Comprehensive EDA Report - NPA Industry Data</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+                h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+                h2 { color: #34495e; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; }
+                h3 { color: #7f8c8d; }
+                .metric { background: #ecf0f1; padding: 15px; margin: 10px 0; border-radius: 5px; }
+                .insight { background: #e8f6f3; padding: 15px; margin: 10px 0; border-left: 4px solid #16a085; }
+                .recommendation { background: #fdf2e9; padding: 15px; margin: 10px 0; border-left: 4px solid #e67e22; }
+                .high-priority { border-left-color: #e74c3c; }
+                .medium-priority { border-left-color: #f39c12; }
+                table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+                th, td { border: 1px solid #bdc3c7; padding: 8px; text-align: left; }
+                th { background-color: #3498db; color: white; }
+                .summary-stats { display: flex; flex-wrap: wrap; gap: 20px; }
+                .stat-card { flex: 1; min-width: 200px; background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }
+                .stat-number { font-size: 2em; font-weight: bold; color: #2980b9; }
+                .stat-label { color: #7f8c8d; font-size: 0.9em; }
+            </style>
+        </head>
+        <body>
+            <h1>Comprehensive Exploratory Data Analysis Report</h1>
+            <h2>NPA Industry Data Analysis</h2>
+            <p><strong>Generated:</strong> 2025-08-20T22:26:36.479493</p>
+            
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <div class="stat-number">6</div>
+                    <div class="stat-label">Datasets Analyzed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">93,507</div>
+                    <div class="stat-label">Total Records</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">511</div>
+                    <div class="stat-label">Companies Analyzed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">29</div>
+                    <div class="stat-label">Recommendations</div>
+                </div>
+            </div>
+            
+            <h2>Key Insights</h2>
+            <div class="insight">
+                <h3>Strong Correlations Found</h3>
+                <p>543 strong correlations identified across datasets.</p>
+            </div>
+            
+            <h2>Recommendations</h2>
+        
+            <div class="recommendation medium-priority">
+                <h3>Data Quality - Medium Priority</h3>
+                <p><strong>Issue:</strong> Address duplicate records in performance_statistics dataset (23.8%)</p>
+                <p><strong>Action:</strong> Implement deduplication procedures</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Data Quality - Medium Priority</h3>
+                <p><strong>Issue:</strong> Address duplicate records in quality_indicators dataset (8.7%)</p>
+                <p><strong>Action:</strong> Implement deduplication procedures</p>
+            </div>
+            
+            <div class="recommendation high-priority">
+                <h3>Data Quality - High Priority</h3>
+                <p><strong>Issue:</strong> Improve data completeness for indicative_prices dataset (currently 77.8%)</p>
+                <p><strong>Action:</strong> Implement data validation rules and improve collection processes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in diesel_price (CV: 0.284)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in lpg_price (CV: 0.377)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in avg_price (CV: 0.224)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in min_price (CV: 0.488)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in price_range (CV: 1.404)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in price_std (CV: 1.404)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in diesel_price_company_rank (CV: 0.484)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in lpg_price_company_rank (CV: 0.396)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in avg_price_company_rank (CV: 0.545)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in diesel_price_minmax (CV: 0.284)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in lpg_price_zscore (CV: 2187423167810921.750)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in lpg_price_minmax (CV: 0.377)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in avg_price_zscore (CV: 83486650904783520.000)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in avg_price_minmax (CV: 0.224)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in max_price_zscore (CV: 2236249577806701.500)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in min_price_zscore (CV: 3913436761161728.000)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in min_price_minmax (CV: 0.488)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in price_range_zscore (CV: 10222855212830636.000)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in price_range_minmax (CV: 1.404)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in price_std_zscore (CV: 250459952714350592.000)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in price_std_minmax (CV: 1.404)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in diesel_price_company_rank_zscore (CV: 14732938394961798.000)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in diesel_price_company_rank_minmax (CV: 0.488)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in lpg_price_company_rank_zscore (CV: 11515400124797728.000)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in lpg_price_company_rank_minmax (CV: 0.399)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <div class="recommendation medium-priority">
+                <h3>Market Analysis - Medium Priority</h3>
+                <p><strong>Issue:</strong> High price volatility detected in avg_price_company_rank_minmax (CV: 0.549)</p>
+                <p><strong>Action:</strong> Monitor price fluctuations and identify underlying causes</p>
+            </div>
+            
+            <h2>Dataset Overview</h2>
+            <table>
+                <tr><th>Dataset</th><th>Records</th><th>Columns</th></tr>
+        <tr><td>ex_pump_prices</td><td>28,474</td><td>56</td></tr><tr><td>performance_statistics</td><td>44,440</td><td>24</td></tr><tr><td>supply_data</td><td>665</td><td>50</td></tr><tr><td>quality_indicators</td><td>23</td><td>10</td></tr><tr><td>indicative_prices</td><td>16,736</td><td>27</td></tr><tr><td>price_floors</td><td>3,169</td><td>9</td></tr>
+            </table>
+            
+            <h2>Analysis Details</h2>
+            <p>Detailed analysis results have been saved in the comprehensive_eda_report.json file.</p>
+            
+            <footer style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #bdc3c7; color: #7f8c8d;">
+                <p>Generated by Comprehensive EDA Script - NPA Industry Data Analysis Platform</p>
+            </footer>
+        </body>
+        </html>
+        

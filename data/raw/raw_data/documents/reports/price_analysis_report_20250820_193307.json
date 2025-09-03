@@ -1,0 +1,1368 @@
+{
+  "report_metadata": {
+    "generated_at": "2025-08-20T19:33:07.322534",
+    "data_source": "Ghana NPA Petroleum Pricing Data",
+    "total_records": 1212,
+    "date_range": {
+      "start": "2024-09-04 00:00:00",
+      "end": "2024-12-10 00:00:00"
+    },
+    "companies_analyzed": 123
+  },
+  "analysis_results": {
+    "price_statistics": {
+      "regular_petrol_ron91": {
+        "count": 868,
+        "mean": 14.021736384792627,
+        "median": 13.99,
+        "std": 0.4638334404827217,
+        "min": 12.59,
+        "max": 15.8,
+        "q25": 13.665,
+        "q75": 14.3,
+        "iqr": 0.6350000000000016,
+        "cv": 0.03307960068239305,
+        "skewness": 0.16714396400952766,
+        "kurtosis": 0.4476031829331557
+      },
+      "premium_petrol_ron95": {
+        "count": 30,
+        "mean": 15.727666666666666,
+        "median": 15.675,
+        "std": 0.2224732968607509,
+        "min": 15.38,
+        "max": 15.94,
+        "q25": 15.5325,
+        "q75": 15.94,
+        "iqr": 0.40749999999999886,
+        "cv": 0.014145346641422816,
+        "skewness": -0.3790526476015953,
+        "kurtosis": -1.4804117662273721
+      },
+      "diesel_price": {
+        "count": 868,
+        "mean": 14.421676361751151,
+        "median": 14.48,
+        "std": 0.49599100505398463,
+        "min": 13.39,
+        "max": 16.0,
+        "q25": 14.02,
+        "q75": 14.79,
+        "iqr": 0.7699999999999996,
+        "cv": 0.034392049343822534,
+        "skewness": 0.266985908032801,
+        "kurtosis": -0.17443105463053588
+      },
+      "lpg_price": {
+        "count": 544,
+        "mean": 41.4784960625,
+        "median": 15.955,
+        "std": 195.97119239747457,
+        "min": 12.1578,
+        "max": 1551.0,
+        "q25": 15.06,
+        "q75": 16.749953,
+        "iqr": 1.689953000000001,
+        "cv": 4.724645563382631,
+        "skewness": 7.600806167170573,
+        "kurtosis": 55.98062240311845
+      },
+      "kerosene_price": {
+        "count": 20,
+        "mean": 16.32,
+        "median": 16.32,
+        "std": 0.44117069139661597,
+        "min": 15.89,
+        "max": 16.75,
+        "q25": 15.89,
+        "q75": 16.75,
+        "iqr": 0.8599999999999994,
+        "cv": 0.0270325178551848,
+        "skewness": 0.0,
+        "kurtosis": -2.235294117647059
+      },
+      "mgo_local_price": {
+        "count": 40,
+        "mean": 12.778925,
+        "median": 12.8065,
+        "std": 1.4651242598479055,
+        "min": 11.29,
+        "max": 15.0,
+        "q25": 11.4,
+        "q75": 13.695,
+        "iqr": 2.295,
+        "cv": 0.11465160487661565,
+        "skewness": 0.5485296730887586,
+        "kurtosis": -1.2517694225775253
+      }
+    },
+    "price_trends": {
+      "regular_petrol_ron91": {
+        "first_date": "2024-09-04 00:00:00",
+        "last_date": "2024-12-10 00:00:00",
+        "first_price": 13.73395611111111,
+        "last_price": 13.860276367816091,
+        "absolute_change": 0.1263202567049806,
+        "percentage_change": 0.9197659850011052,
+        "direction": "increasing",
+        "days_analyzed": 9,
+        "current_7day_avg": 13.680373972288335
+      },
+      "diesel_price": {
+        "first_date": "2024-09-04 00:00:00",
+        "last_date": "2024-12-10 00:00:00",
+        "first_price": 13.305621894736841,
+        "last_price": 13.810633413043478,
+        "absolute_change": 0.5050115183066364,
+        "percentage_change": 3.795474742194487,
+        "direction": "increasing",
+        "days_analyzed": 9,
+        "current_7day_avg": 13.355588311285846
+      },
+      "lpg_price": {
+        "first_date": "2024-09-04 00:00:00",
+        "last_date": "2024-12-10 00:00:00",
+        "first_price": 37.343556609375,
+        "last_price": 15.083469078125,
+        "absolute_change": -22.26008753125,
+        "percentage_change": -59.60891128849164,
+        "direction": "decreasing",
+        "days_analyzed": 9,
+        "current_7day_avg": 34.57891428958388
+      }
+    },
+    "anomalies": [
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Desert oil",
+        "product": "regular_petrol_ron91",
+        "price": 12.59,
+        "method": "z_score",
+        "score": 3.088526410562355
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "So Energy",
+        "product": "regular_petrol_ron91",
+        "price": 15.8,
+        "method": "z_score",
+        "score": 3.8360512443815282
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Telios Energy",
+        "product": "regular_petrol_ron91",
+        "price": 15.72,
+        "method": "z_score",
+        "score": 3.6634761003330825
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Petroland",
+        "product": "regular_petrol_ron91",
+        "price": 12.65,
+        "method": "iqr",
+        "score": 1.5984251968503878
+      },
+      {
+        "date": "2024-10-31 00:00:00",
+        "company": "Petroland",
+        "product": "regular_petrol_ron91",
+        "price": 12.65,
+        "method": "iqr",
+        "score": 1.5984251968503878
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Total Energies",
+        "product": "regular_petrol_ron91",
+        "price": 15.3,
+        "method": "iqr",
+        "score": 1.5748031496062953
+      },
+      {
+        "date": "2024-09-10 00:00:00",
+        "company": "Sayon",
+        "product": "regular_petrol_ron91",
+        "price": 15.2,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-09-11 00:00:00",
+        "company": "Sayon",
+        "product": "regular_petrol_ron91",
+        "price": 15.2,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-09-12 00:00:00",
+        "company": "Sayon",
+        "product": "regular_petrol_ron91",
+        "price": 15.2,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Allied Oil",
+        "product": "regular_petrol_ron91",
+        "price": 12.92,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Amdaway",
+        "product": "regular_petrol_ron91",
+        "price": 12.99,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Aminaser oil",
+        "product": "regular_petrol_ron91",
+        "price": 12.99,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Benab Oil",
+        "product": "regular_petrol_ron91",
+        "price": 12.99,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Breedlove ",
+        "product": "regular_petrol_ron91",
+        "price": 12.95,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Buffalo Oil ",
+        "product": "regular_petrol_ron91",
+        "price": 12.99,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Goodness energy",
+        "product": "regular_petrol_ron91",
+        "price": 12.73,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Liberty ",
+        "product": "regular_petrol_ron91",
+        "price": 13.19,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "MM Energy",
+        "product": "regular_petrol_ron91",
+        "price": 12.96,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Reliance Oil",
+        "product": "regular_petrol_ron91",
+        "price": 12.95,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Runel Oil",
+        "product": "regular_petrol_ron91",
+        "price": 12.85,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Sayon",
+        "product": "regular_petrol_ron91",
+        "price": 15.2,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Seam ",
+        "product": "regular_petrol_ron91",
+        "price": 13.15,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-31 00:00:00",
+        "company": "Amdaway",
+        "product": "regular_petrol_ron91",
+        "price": 12.99,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-31 00:00:00",
+        "company": "Breedlove ",
+        "product": "regular_petrol_ron91",
+        "price": 12.95,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-31 00:00:00",
+        "company": "Buffalo Oil ",
+        "product": "regular_petrol_ron91",
+        "price": 12.99,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-31 00:00:00",
+        "company": "Goodness energy",
+        "product": "regular_petrol_ron91",
+        "price": 12.73,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-31 00:00:00",
+        "company": "Sayon",
+        "product": "regular_petrol_ron91",
+        "price": 15.2,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-31 00:00:00",
+        "company": "Seam ",
+        "product": "regular_petrol_ron91",
+        "price": 13.15,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-09-04 00:00:00",
+        "company": "Sayon",
+        "product": "regular_petrol_ron91",
+        "price": 15.2,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-09-05 00:00:00",
+        "company": "Sayon",
+        "product": "regular_petrol_ron91",
+        "price": 15.2,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-09-06 00:00:00",
+        "company": "Sayon",
+        "product": "regular_petrol_ron91",
+        "price": 15.2,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Amdaway",
+        "product": "regular_petrol_ron91",
+        "price": 12.99,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Buffalo Oil ",
+        "product": "regular_petrol_ron91",
+        "price": 12.99,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Ex Oil",
+        "product": "regular_petrol_ron91",
+        "price": 15.0,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Signal oil",
+        "product": "regular_petrol_ron91",
+        "price": 15.0,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Jusbro",
+        "product": "diesel_price",
+        "price": 15.92,
+        "method": "z_score",
+        "score": 3.022610206838181
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "So Energy",
+        "product": "diesel_price",
+        "price": 16.0,
+        "method": "z_score",
+        "score": 3.1839964456815237
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Desert oil",
+        "product": "diesel_price",
+        "price": 13.49,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Goodness energy",
+        "product": "diesel_price",
+        "price": 13.43,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "MM Energy",
+        "product": "diesel_price",
+        "price": 13.5,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Petroland",
+        "product": "diesel_price",
+        "price": 13.39,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-31 00:00:00",
+        "company": "Goodness energy",
+        "product": "diesel_price",
+        "price": 13.43,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-10-31 00:00:00",
+        "company": "Petroland",
+        "product": "diesel_price",
+        "price": 13.39,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Agapet",
+        "product": "diesel_price",
+        "price": 15.58,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Aminso Energy",
+        "product": "diesel_price",
+        "price": 15.34,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Aminaser oil",
+        "product": "diesel_price",
+        "price": 15.39,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Beap Energy",
+        "product": "diesel_price",
+        "price": 15.65,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "BF Energy Limited",
+        "product": "diesel_price",
+        "price": 15.48,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Engen oil",
+        "product": "diesel_price",
+        "price": 15.69,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Essence",
+        "product": "diesel_price",
+        "price": 15.42,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Ex Oil",
+        "product": "diesel_price",
+        "price": 15.72,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "EV Oil",
+        "product": "diesel_price",
+        "price": 15.7,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Glory oil",
+        "product": "diesel_price",
+        "price": 15.5,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "GOIL",
+        "product": "diesel_price",
+        "price": 15.6,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Infin",
+        "product": "diesel_price",
+        "price": 15.586194,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Kings Energy",
+        "product": "diesel_price",
+        "price": 15.64,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Mercy Oil",
+        "product": "diesel_price",
+        "price": 15.45,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Nasona",
+        "product": "diesel_price",
+        "price": 15.43,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Petronax energy",
+        "product": "diesel_price",
+        "price": 15.35,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Petrosol",
+        "product": "diesel_price",
+        "price": 15.69,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Power fuels",
+        "product": "diesel_price",
+        "price": 15.45,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Ready Oil",
+        "product": "diesel_price",
+        "price": 15.85,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Sayon",
+        "product": "diesel_price",
+        "price": 15.75,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Seam ",
+        "product": "diesel_price",
+        "price": 15.35,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Signal oil",
+        "product": "diesel_price",
+        "price": 15.69,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Sonnidom",
+        "product": "diesel_price",
+        "price": 15.6,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Strategic Energies",
+        "product": "diesel_price",
+        "price": 15.6,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Tel  Energy",
+        "product": "diesel_price",
+        "price": 15.66,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Telios Energy",
+        "product": "diesel_price",
+        "price": 15.85,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Total Energies",
+        "product": "diesel_price",
+        "price": 15.8,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Unity oil",
+        "product": "diesel_price",
+        "price": 15.43,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Vivo Energy",
+        "product": "diesel_price",
+        "price": 15.72,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Wapco",
+        "product": "diesel_price",
+        "price": 15.453,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-09-10 00:00:00",
+        "company": "Baffour Gas",
+        "product": "lpg_price",
+        "price": 1551.0,
+        "method": "z_score",
+        "score": 7.709861990710016
+      },
+      {
+        "date": "2024-09-11 00:00:00",
+        "company": "Baffour Gas",
+        "product": "lpg_price",
+        "price": 1551.0,
+        "method": "z_score",
+        "score": 7.709861990710016
+      },
+      {
+        "date": "2024-09-11 00:00:00",
+        "company": "Baffour Gas",
+        "product": "lpg_price",
+        "price": 1551.0,
+        "method": "z_score",
+        "score": 7.709861990710016
+      },
+      {
+        "date": "2024-09-12 00:00:00",
+        "company": "Baffour Gas",
+        "product": "lpg_price",
+        "price": 1551.0,
+        "method": "z_score",
+        "score": 7.709861990710016
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "Baffour Gas",
+        "product": "lpg_price",
+        "price": 1551.0,
+        "method": "z_score",
+        "score": 7.709861990710016
+      },
+      {
+        "date": "2024-10-31 00:00:00",
+        "company": "Baffour Gas",
+        "product": "lpg_price",
+        "price": 1551.0,
+        "method": "z_score",
+        "score": 7.709861990710016
+      },
+      {
+        "date": "2024-09-04 00:00:00",
+        "company": "Baffour Gas",
+        "product": "lpg_price",
+        "price": 1551.0,
+        "method": "z_score",
+        "score": 7.709861990710016
+      },
+      {
+        "date": "2024-09-05 00:00:00",
+        "company": "Baffour Gas",
+        "product": "lpg_price",
+        "price": 1551.0,
+        "method": "z_score",
+        "score": 7.709861990710016
+      },
+      {
+        "date": "2024-09-06 00:00:00",
+        "company": "Baffour Gas",
+        "product": "lpg_price",
+        "price": 1551.0,
+        "method": "z_score",
+        "score": 7.709861990710016
+      },
+      {
+        "date": "2024-09-10 00:00:00",
+        "company": "Salsa Oil",
+        "product": "lpg_price",
+        "price": 12.1578,
+        "method": "iqr",
+        "score": 1.7173258664590074
+      },
+      {
+        "date": "2024-09-11 00:00:00",
+        "company": "Salsa Oil",
+        "product": "lpg_price",
+        "price": 12.1578,
+        "method": "iqr",
+        "score": 1.7173258664590074
+      },
+      {
+        "date": "2024-09-12 00:00:00",
+        "company": "Salsa Oil",
+        "product": "lpg_price",
+        "price": 12.1578,
+        "method": "iqr",
+        "score": 1.7173258664590074
+      },
+      {
+        "date": "2024-10-18 00:00:00",
+        "company": "DA Oil",
+        "product": "lpg_price",
+        "price": 19.9078,
+        "method": "iqr",
+        "score": 1.8686004877058702
+      },
+      {
+        "date": "2024-10-31 00:00:00",
+        "company": "DA Oil",
+        "product": "lpg_price",
+        "price": 19.9078,
+        "method": "iqr",
+        "score": 1.8686004877058702
+      },
+      {
+        "date": "2024-09-04 00:00:00",
+        "company": "Salsa Oil",
+        "product": "lpg_price",
+        "price": 12.1578,
+        "method": "iqr",
+        "score": 1.7173258664590074
+      },
+      {
+        "date": "2024-09-05 00:00:00",
+        "company": "Salsa Oil",
+        "product": "lpg_price",
+        "price": 12.1578,
+        "method": "iqr",
+        "score": 1.7173258664590074
+      },
+      {
+        "date": "2024-09-06 00:00:00",
+        "company": "Salsa Oil",
+        "product": "lpg_price",
+        "price": 12.1578,
+        "method": "iqr",
+        "score": 1.7173258664590074
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "DA Oil",
+        "product": "lpg_price",
+        "price": 19.9078,
+        "method": "iqr",
+        "score": 1.8686004877058702
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Gogas",
+        "product": "lpg_price",
+        "price": 19.551903,
+        "method": "iqr",
+        "score": 1.6580046900712602
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "KI Energy",
+        "product": "lpg_price",
+        "price": 19.66,
+        "method": "iqr",
+        "score": 1.7219691908591523
+      },
+      {
+        "date": "2024-09-04 00:00:00",
+        "company": "s",
+        "product": "lpg_price",
+        "price": 12.9678,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-09-04 00:00:00",
+        "company": "Frimps Oil",
+        "product": "lpg_price",
+        "price": 13.899953,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Anasset",
+        "product": "lpg_price",
+        "price": 19.05,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Baffour Gas",
+        "product": "lpg_price",
+        "price": 19.101903,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "JD Link",
+        "product": "lpg_price",
+        "price": 14.299953,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Star Oil",
+        "product": "lpg_price",
+        "price": 18.957753,
+        "method": "isolation_forest",
+        "score": -1.0
+      },
+      {
+        "date": "2024-12-10 00:00:00",
+        "company": "Yokwas Gas",
+        "product": "lpg_price",
+        "price": 18.96,
+        "method": "isolation_forest",
+        "score": -1.0
+      }
+    ],
+    "company_pricing": {
+      "Baffour Gas": {
+        "company_name": "Baffour Gas",
+        "total_records": 20,
+        "products": {
+          "lpg_price": {
+            "avg_price": 707.3099854500001,
+            "min_price": 15.51,
+            "max_price": 1551.0,
+            "price_volatility": 782.9720468321459,
+            "latest_price": 19.101903
+          }
+        }
+      },
+      "Oil Space": {
+        "company_name": "Oil Space",
+        "total_records": 20,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 14.5,
+            "min_price": 14.5,
+            "max_price": 14.5,
+            "price_volatility": 0.0,
+            "latest_price": 14.5
+          },
+          "diesel_price": {
+            "avg_price": 14.9,
+            "min_price": 14.9,
+            "max_price": 14.9,
+            "price_volatility": 0.0,
+            "latest_price": 14.9
+          },
+          "lpg_price": {
+            "avg_price": 14.675,
+            "min_price": 14.51,
+            "max_price": 14.84,
+            "price_volatility": 0.16928642809405045,
+            "latest_price": 14.51
+          }
+        }
+      },
+      "Aminso Energy": {
+        "company_name": "Aminso Energy",
+        "total_records": 19,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 14.273684210526318,
+            "min_price": 13.79,
+            "max_price": 14.5,
+            "price_volatility": 0.19986691478514151,
+            "latest_price": 14.35
+          },
+          "diesel_price": {
+            "avg_price": 14.89315789473684,
+            "min_price": 14.35,
+            "max_price": 15.34,
+            "price_volatility": 0.21914106647897813,
+            "latest_price": 15.34
+          }
+        }
+      },
+      "AI Energy": {
+        "company_name": "AI Energy",
+        "total_records": 10,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 13.852,
+            "min_price": 13.25,
+            "max_price": 13.97,
+            "price_volatility": 0.2319865896507332,
+            "latest_price": 13.97
+          },
+          "diesel_price": {
+            "avg_price": 14.136,
+            "min_price": 14.02,
+            "max_price": 14.95,
+            "price_volatility": 0.295002824845232,
+            "latest_price": 14.95
+          }
+        }
+      },
+      "Allied Oil": {
+        "company_name": "Allied Oil",
+        "total_records": 10,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 13.427000000000001,
+            "min_price": 12.92,
+            "max_price": 13.95,
+            "price_volatility": 0.2506901584736733,
+            "latest_price": 13.95
+          },
+          "diesel_price": {
+            "avg_price": 13.805999999999997,
+            "min_price": 13.6,
+            "max_price": 14.95,
+            "price_volatility": 0.42851682191795765,
+            "latest_price": 14.95
+          }
+        }
+      },
+      "Alinco": {
+        "company_name": "Alinco",
+        "total_records": 10,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 13.940000000000001,
+            "min_price": 13.94,
+            "max_price": 13.94,
+            "price_volatility": 1.8724445165742407e-15,
+            "latest_price": 13.94
+          },
+          "diesel_price": {
+            "avg_price": 14.479999999999999,
+            "min_price": 14.48,
+            "max_price": 14.48,
+            "price_volatility": 1.8724445165742407e-15,
+            "latest_price": 14.48
+          }
+        }
+      },
+      "Alive Gas": {
+        "company_name": "Alive Gas",
+        "total_records": 10,
+        "products": {
+          "lpg_price": {
+            "avg_price": 16.6139777,
+            "min_price": 16.067753,
+            "max_price": 17.907753,
+            "price_volatility": 0.8796457708840723,
+            "latest_price": 17.85
+          }
+        }
+      },
+      "Amdaway": {
+        "company_name": "Amdaway",
+        "total_records": 10,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 13.375,
+            "min_price": 12.99,
+            "max_price": 13.54,
+            "price_volatility": 0.26567524034680584,
+            "latest_price": 12.99
+          },
+          "diesel_price": {
+            "avg_price": 13.863999999999999,
+            "min_price": 13.84,
+            "max_price": 13.92,
+            "price_volatility": 0.03864367132317187,
+            "latest_price": 13.92
+          }
+        }
+      },
+      "Anasset": {
+        "company_name": "Anasset",
+        "total_records": 10,
+        "products": {
+          "lpg_price": {
+            "avg_price": 16.667886900000003,
+            "min_price": 16.0,
+            "max_price": 19.05,
+            "price_volatility": 1.1250350263421873,
+            "latest_price": 19.05
+          }
+        }
+      },
+      "Aegis huile": {
+        "company_name": "Aegis huile",
+        "total_records": 10,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 13.969999999999999,
+            "min_price": 13.7,
+            "max_price": 14.37,
+            "price_volatility": 0.1851725921644154,
+            "latest_price": 14.37
+          },
+          "diesel_price": {
+            "avg_price": 14.372,
+            "min_price": 14.19,
+            "max_price": 15.29,
+            "price_volatility": 0.35558402663786803,
+            "latest_price": 15.29
+          }
+        }
+      },
+      "Agapet": {
+        "company_name": "Agapet",
+        "total_records": 10,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 14.357999999999999,
+            "min_price": 14.16,
+            "max_price": 14.6,
+            "price_volatility": 0.18575970140659318,
+            "latest_price": 14.6
+          },
+          "diesel_price": {
+            "avg_price": 14.736,
+            "min_price": 14.5,
+            "max_price": 15.58,
+            "price_volatility": 0.35271014224777336,
+            "latest_price": 15.58
+          }
+        }
+      },
+      "Annandale": {
+        "company_name": "Annandale",
+        "total_records": 10,
+        "products": {
+          "lpg_price": {
+            "avg_price": 16.494999999999997,
+            "min_price": 16.01,
+            "max_price": 17.86,
+            "price_volatility": 0.7867125692822418,
+            "latest_price": 17.86
+          }
+        }
+      },
+      "Andev": {
+        "company_name": "Andev",
+        "total_records": 10,
+        "products": {
+          "lpg_price": {
+            "avg_price": 16.483555300000003,
+            "min_price": 15.91,
+            "max_price": 17.8628,
+            "price_volatility": 0.9236632946785617,
+            "latest_price": 17.8
+          }
+        }
+      },
+      "Aminaser oil": {
+        "company_name": "Aminaser oil",
+        "total_records": 10,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 13.858,
+            "min_price": 12.99,
+            "max_price": 14.87,
+            "price_volatility": 0.584024352612495,
+            "latest_price": 14.87
+          },
+          "diesel_price": {
+            "avg_price": 14.336000000000002,
+            "min_price": 13.98,
+            "max_price": 15.39,
+            "price_volatility": 0.4718333038973266,
+            "latest_price": 15.39
+          }
+        }
+      },
+      "AP Oil &Gas": {
+        "company_name": "AP Oil &Gas",
+        "total_records": 10,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 14.12,
+            "min_price": 14.0,
+            "max_price": 14.4,
+            "price_volatility": 0.19321835661585934,
+            "latest_price": 14.0
+          },
+          "diesel_price": {
+            "avg_price": 14.459999999999999,
+            "min_price": 14.4,
+            "max_price": 14.6,
+            "price_volatility": 0.09660917830792926,
+            "latest_price": 14.4
+          }
+        }
+      },
+      "Breedlove ": {
+        "company_name": "Breedlove ",
+        "total_records": 10,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 13.459999999999999,
+            "min_price": 12.95,
+            "max_price": 13.85,
+            "price_volatility": 0.28460498941515455,
+            "latest_price": 13.85
+          },
+          "diesel_price": {
+            "avg_price": 13.86,
+            "min_price": 13.75,
+            "max_price": 14.85,
+            "price_volatility": 0.3478505426185216,
+            "latest_price": 14.85
+          }
+        }
+      },
+      "Benab Oil": {
+        "company_name": "Benab Oil",
+        "total_records": 10,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 13.39,
+            "min_price": 12.99,
+            "max_price": 14.0,
+            "price_volatility": 0.26208565181804366,
+            "latest_price": 14.0
+          },
+          "diesel_price": {
+            "avg_price": 13.763,
+            "min_price": 13.57,
+            "max_price": 15.0,
+            "price_volatility": 0.44674253087084603,
+            "latest_price": 15.0
+          }
+        }
+      },
+      "BF Energy Limited": {
+        "company_name": "BF Energy Limited",
+        "total_records": 10,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 14.699000000000002,
+            "min_price": 14.69,
+            "max_price": 14.72,
+            "price_volatility": 0.014491376746189989,
+            "latest_price": 14.72
+          },
+          "diesel_price": {
+            "avg_price": 14.940999999999999,
+            "min_price": 14.85,
+            "max_price": 15.48,
+            "price_volatility": 0.19812734400996887,
+            "latest_price": 15.48
+          }
+        }
+      },
+      "Beap Energy": {
+        "company_name": "Beap Energy",
+        "total_records": 10,
+        "products": {
+          "regular_petrol_ron91": {
+            "avg_price": 14.343,
+            "min_price": 14.31,
+            "max_price": 14.62,
+            "price_volatility": 0.09741663102366004,
+            "latest_price": 14.62
+          },
+          "diesel_price": {
+            "avg_price": 14.695000000000002,
+            "min_price": 14.52,
+            "max_price": 15.65,
+            "price_volatility": 0.35945174301365646,
+            "latest_price": 15.65
+          }
+        }
+      },
+      "Coegan": {
+        "company_name": "Coegan",
+        "total_records": 10,
+        "products": {
+          "lpg_price": {
+            "avg_price": 16.6989777,
+            "min_price": 16.117753,
+            "max_price": 18.11,
+            "price_volatility": 0.9364250334892507,
+            "latest_price": 18.11
+          }
+        }
+      }
+    },
+    "correlations": {
+      "regular_petrol_ron91": {
+        "regular_petrol_ron91": 1.0,
+        "diesel_price": 0.8490747789026696,
+        "lpg_price": 0.08274422500961144,
+        "kerosene_price": 0.03078875066878406,
+        "mgo_local_price": 0.8082906297193914
+      },
+      "diesel_price": {
+        "regular_petrol_ron91": 0.8490747789026696,
+        "diesel_price": 1.0,
+        "lpg_price": 0.21880940000455934,
+        "kerosene_price": -0.1374304316801002,
+        "mgo_local_price": 0.6674017057230551
+      },
+      "lpg_price": {
+        "regular_petrol_ron91": 0.08274422500961144,
+        "diesel_price": 0.21880940000455934,
+        "lpg_price": 1.0,
+        "kerosene_price": NaN,
+        "mgo_local_price": 0.8131882417645674
+      },
+      "kerosene_price": {
+        "regular_petrol_ron91": 0.03078875066878406,
+        "diesel_price": -0.1374304316801002,
+        "lpg_price": NaN,
+        "kerosene_price": 1.0,
+        "mgo_local_price": NaN
+      },
+      "mgo_local_price": {
+        "regular_petrol_ron91": 0.8082906297193914,
+        "diesel_price": 0.6674017057230551,
+        "lpg_price": 0.8131882417645674,
+        "kerosene_price": NaN,
+        "mgo_local_price": 1.0
+      }
+    },
+    "clustering": {
+      "n_clusters": 5,
+      "n_companies": 121,
+      "cluster_sizes": {
+        "4": 39,
+        "0": 32,
+        "1": 26,
+        "3": 23,
+        "2": 1
+      }
+    }
+  },
+  "key_findings": [
+    "Highest average price: lpg_price at GHS 41.48",
+    "Most volatile product: lpg_price with CV of 472.46%",
+    "regular_petrol_ron91 price increasing by 0.9% over analysis period",
+    "diesel_price price increasing by 3.8% over analysis period",
+    "lpg_price price decreasing by 59.6% over analysis period",
+    "Detected 100 price anomalies requiring investigation"
+  ],
+  "recommendations": [
+    "Implement price stabilization measures for lpg_price due to high volatility",
+    "Implement price stabilization measures for mgo_local_price due to high volatility",
+    "Investigate companies with frequent price anomalies for compliance",
+    "Monitor 5 distinct pricing strategy clusters identified",
+    "Establish automated price monitoring system for real-time anomaly detection",
+    "Implement predictive pricing models to forecast future price movements"
+  ]
+}

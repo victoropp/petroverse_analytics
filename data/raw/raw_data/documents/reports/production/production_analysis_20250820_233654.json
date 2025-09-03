@@ -1,0 +1,837 @@
+{
+  "metadata": {
+    "analysis_date": "2025-08-20T23:36:52.859352",
+    "execution_time_seconds": 1.695568,
+    "version": "1.0.0",
+    "environment": "PRODUCTION"
+  },
+  "data_summary": {
+    "datasets_loaded": 6,
+    "total_rows": 93507,
+    "total_columns": 176,
+    "datasets": {
+      "prices": {
+        "file": "ex_pump_prices_cleaned.csv",
+        "rows": 28474,
+        "columns": 56,
+        "memory_mb": 20.870922088623047,
+        "dtypes": {
+          "float64": 47,
+          "object": 5,
+          "int64": 2,
+          "bool": 2
+        }
+      },
+      "indicative": {
+        "file": "indicative_prices_cleaned.csv",
+        "rows": 16736,
+        "columns": 27,
+        "memory_mb": 14.584784507751465,
+        "dtypes": {
+          "object": 13,
+          "float64": 12,
+          "int64": 2
+        }
+      },
+      "performance": {
+        "file": "performance_statistics_cleaned.csv",
+        "rows": 44440,
+        "columns": 24,
+        "memory_mb": 49.4188232421875,
+        "dtypes": {
+          "object": 20,
+          "float64": 3,
+          "int64": 1
+        }
+      },
+      "price_floors": {
+        "file": "price_floors_cleaned.csv",
+        "rows": 3169,
+        "columns": 9,
+        "memory_mb": 1.7944202423095703,
+        "dtypes": {
+          "object": 9
+        }
+      },
+      "quality": {
+        "file": "quality_indicators_cleaned.csv",
+        "rows": 23,
+        "columns": 10,
+        "memory_mb": 0.014753341674804688,
+        "dtypes": {
+          "object": 10
+        }
+      },
+      "supply": {
+        "file": "supply_data_cleaned.csv",
+        "rows": 665,
+        "columns": 50,
+        "memory_mb": 0.9043788909912109,
+        "dtypes": {
+          "float64": 30,
+          "object": 19,
+          "int64": 1
+        }
+      }
+    }
+  },
+  "analyses_completed": [
+    "data_quality",
+    "price_analysis",
+    "anomaly_detection",
+    "segmentation"
+  ],
+  "results": {
+    "data_quality": {
+      "prices": {
+        "total_rows": 28474,
+        "total_columns": 56,
+        "missing_values": 1890,
+        "completeness_percent": 99.88,
+        "duplicate_rows": 0,
+        "numeric_columns": 49,
+        "text_columns": 7,
+        "memory_usage_mb": 20.87,
+        "numeric_summary": {
+          "company_number": {
+            "mean": 63.80329423333568,
+            "std": 37.510011892868974,
+            "min": 1.0,
+            "max": 136.0,
+            "nulls": 0
+          },
+          "regular_petrol_ron91": {
+            "mean": 13.682391452237127,
+            "std": 12.157062193967231,
+            "min": 0.0,
+            "max": 1488.74,
+            "nulls": 0
+          },
+          "diesel_price": {
+            "mean": 13.50620649269509,
+            "std": 3.8294324343021167,
+            "min": 0.0,
+            "max": 16.9512,
+            "nulls": 0
+          },
+          "lpg_price": {
+            "mean": 13.868137730912409,
+            "std": 5.232731485688246,
+            "min": 0.0,
+            "max": 20.76,
+            "nulls": 0
+          },
+          "year": {
+            "mean": 2024.499876495289,
+            "std": 0.5000088067448533,
+            "min": 2024.0,
+            "max": 2025.0,
+            "nulls": 135
+          }
+        }
+      },
+      "indicative": {
+        "total_rows": 16736,
+        "total_columns": 27,
+        "missing_values": 100416,
+        "completeness_percent": 77.78,
+        "duplicate_rows": 44,
+        "numeric_columns": 14,
+        "text_columns": 13,
+        "memory_usage_mb": 14.58,
+        "numeric_summary": {
+          "price_type": {
+            "mean": null,
+            "std": null,
+            "min": null,
+            "max": null,
+            "nulls": 16736
+          },
+          "period_start": {
+            "mean": 8.656847514340344,
+            "std": 7.498583773367206,
+            "min": 1.0,
+            "max": 16.0,
+            "nulls": 0
+          },
+          "period_end": {
+            "mean": 22.868367590822178,
+            "std": 7.730070470010119,
+            "min": 15.0,
+            "max": 31.0,
+            "nulls": 0
+          },
+          "month": {
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "nulls": 0
+          },
+          "year": {
+            "mean": 2005.3654995219886,
+            "std": 171.15030937142333,
+            "min": 0.0,
+            "max": 2023.0,
+            "nulls": 0
+          }
+        }
+      },
+      "performance": {
+        "total_rows": 44440,
+        "total_columns": 24,
+        "missing_values": 0,
+        "completeness_percent": 100.0,
+        "duplicate_rows": 10558,
+        "numeric_columns": 4,
+        "text_columns": 20,
+        "memory_usage_mb": 49.42,
+        "numeric_summary": {
+          "ATK": {
+            "mean": 219653.03068158377,
+            "std": 4548876.428008737,
+            "min": 0.0,
+            "max": 287483600.0,
+            "nulls": 0
+          },
+          "year": {
+            "mean": 2020.4551755175517,
+            "std": 1.3671155473475332,
+            "min": 2015.0,
+            "max": 2022.0,
+            "nulls": 0
+          },
+          "ATK_zscore": {
+            "mean": 6.523434657743494e-17,
+            "std": 0.9999999999999999,
+            "min": -0.0482873153750928,
+            "max": 63.15052772164833,
+            "nulls": 0
+          },
+          "ATK_minmax": {
+            "mean": 0.000764054125806076,
+            "std": 0.015823081483635017,
+            "min": 0.0,
+            "max": 1.0,
+            "nulls": 0
+          }
+        }
+      },
+      "price_floors": {
+        "total_rows": 3169,
+        "total_columns": 9,
+        "missing_values": 0,
+        "completeness_percent": 100.0,
+        "duplicate_rows": 0,
+        "numeric_columns": 0,
+        "text_columns": 9,
+        "memory_usage_mb": 1.79
+      },
+      "quality": {
+        "total_rows": 23,
+        "total_columns": 10,
+        "missing_values": 0,
+        "completeness_percent": 100.0,
+        "duplicate_rows": 2,
+        "numeric_columns": 0,
+        "text_columns": 10,
+        "memory_usage_mb": 0.01
+      },
+      "supply": {
+        "total_rows": 665,
+        "total_columns": 50,
+        "missing_values": 0,
+        "completeness_percent": 100.0,
+        "duplicate_rows": 7,
+        "numeric_columns": 31,
+        "text_columns": 19,
+        "memory_usage_mb": 0.9,
+        "numeric_summary": {
+          "PREMIUM": {
+            "mean": 19551393.23749928,
+            "std": 83958083.81847738,
+            "min": 1342.28,
+            "max": 777086900.0,
+            "nulls": 0
+          },
+          "PREMIX": {
+            "mean": 1150871.0435477037,
+            "std": 5009275.676971991,
+            "min": 2.705843788181304,
+            "max": 56542500.0,
+            "nulls": 0
+          },
+          "KEROSENE": {
+            "mean": 2642721.430544328,
+            "std": 11653843.573598824,
+            "min": 1240.6,
+            "max": 158009536.0,
+            "nulls": 0
+          },
+          "ATK": {
+            "mean": 3450598.618382858,
+            "std": 14945755.068039745,
+            "min": 1240.6,
+            "max": 152075000.0,
+            "nulls": 0
+          },
+          "GASOIL": {
+            "mean": 24725424.81034686,
+            "std": 106252547.12086394,
+            "min": 1183.43,
+            "max": 1131544950.0,
+            "nulls": 0
+          }
+        }
+      }
+    },
+    "price_analysis": {
+      "regular_petrol_ron91": {
+        "count": 28474,
+        "mean": 13.682391452237127,
+        "median": 14.14,
+        "std": 12.157062193967231,
+        "min": 0.0,
+        "max": 1488.74,
+        "q25": 13.699,
+        "q75": 14.48,
+        "iqr": 0.7810000000000006,
+        "cv": 0.8885188116715884,
+        "skewness": 111.14530010408171,
+        "kurtosis": 13004.863141748807,
+        "latest_price": 13.27,
+        "latest_date": "2025-08-19 00:00:00"
+      },
+      "diesel_price": {
+        "count": 28474,
+        "mean": 13.50620649269509,
+        "median": 14.5,
+        "std": 3.8294324343021167,
+        "min": 0.0,
+        "max": 16.9512,
+        "q25": 14.02,
+        "q75": 14.97,
+        "iqr": 0.9500000000000011,
+        "cv": 0.28353131105860757,
+        "skewness": -3.1131995934539893,
+        "kurtosis": 8.15956153099781,
+        "latest_price": 14.4,
+        "latest_date": "2025-08-19 00:00:00"
+      },
+      "lpg_price": {
+        "count": 28474,
+        "mean": 13.868137730912409,
+        "median": 15.35,
+        "std": 5.232731485688246,
+        "min": 0.0,
+        "max": 20.76,
+        "q25": 15.06,
+        "q75": 15.56,
+        "iqr": 0.5,
+        "cv": 0.37732041512858383,
+        "skewness": -2.101522382219592,
+        "kurtosis": 2.9458370940666234,
+        "latest_price": 15.35,
+        "latest_date": "2025-08-19 00:00:00"
+      }
+    },
+    "anomalies": {
+      "prices": {
+        "company_number": {
+          "z_score_anomalies": 0,
+          "iqr_anomalies": 0,
+          "total_anomalies": 0,
+          "anomaly_rate": 0.0,
+          "lower_bound": -61.0,
+          "upper_bound": 187.0
+        },
+        "regular_petrol_ron91": {
+          "z_score_anomalies": 2,
+          "iqr_anomalies": 4317,
+          "total_anomalies": 4317,
+          "anomaly_rate": 15.161199690946125,
+          "lower_bound": 12.5275,
+          "upper_bound": 15.651500000000002
+        },
+        "diesel_price": {
+          "z_score_anomalies": 2049,
+          "iqr_anomalies": 2624,
+          "total_anomalies": 2624,
+          "anomaly_rate": 9.215424597878767,
+          "lower_bound": 12.594999999999999,
+          "upper_bound": 16.395000000000003
+        },
+        "lpg_price": {
+          "z_score_anomalies": 0,
+          "iqr_anomalies": 10454,
+          "total_anomalies": 10454,
+          "anomaly_rate": 36.714195406335605,
+          "lower_bound": 14.31,
+          "upper_bound": 16.310000000000002
+        },
+        "year": {
+          "z_score_anomalies": 0,
+          "iqr_anomalies": 0,
+          "total_anomalies": 0,
+          "anomaly_rate": 0.0,
+          "lower_bound": 2022.5,
+          "upper_bound": 2026.5
+        },
+        "month": {
+          "z_score_anomalies": 0,
+          "iqr_anomalies": 0,
+          "total_anomalies": 0,
+          "anomaly_rate": 0.0,
+          "lower_bound": -3.5,
+          "upper_bound": 16.5
+        },
+        "day": {
+          "z_score_anomalies": 0,
+          "iqr_anomalies": 0,
+          "total_anomalies": 0,
+          "anomaly_rate": 0.0,
+          "lower_bound": -12.0,
+          "upper_bound": 44.0
+        },
+        "day_of_week": {
+          "z_score_anomalies": 0,
+          "iqr_anomalies": 0,
+          "total_anomalies": 0,
+          "anomaly_rate": 0.0,
+          "lower_bound": -2.0,
+          "upper_bound": 6.0
+        },
+        "day_of_month": {
+          "z_score_anomalies": 0,
+          "iqr_anomalies": 0,
+          "total_anomalies": 0,
+          "anomaly_rate": 0.0,
+          "lower_bound": -9.5,
+          "upper_bound": 42.5
+        },
+        "day_of_year": {
+          "z_score_anomalies": 0,
+          "iqr_anomalies": 0,
+          "total_anomalies": 0,
+          "anomaly_rate": 0.0,
+          "lower_bound": -107.5,
+          "upper_bound": 480.5
+        }
+      },
+      "indicative": {
+        "period_start": {
+          "z_score_anomalies": 0,
+          "iqr_anomalies": 0,
+          "total_anomalies": 0,
+          "anomaly_rate": 0.0,
+          "lower_bound": -21.5,
+          "upper_bound": 38.5
+        },
+        "period_end": {
+          "z_score_anomalies": 0,
+          "iqr_anomalies": 0,
+          "total_anomalies": 0,
+          "anomaly_rate": 0.0,
+          "lower_bound": -9.0,
+          "upper_bound": 55.0
+        },
+        "month": {
+          "z_score_anomalies": 0,
+          "iqr_anomalies": 0,
+          "total_anomalies": 0,
+          "anomaly_rate": 0.0,
+          "lower_bound": 0.0,
+          "upper_bound": 0.0
+        },
+        "year": {
+          "z_score_anomalies": 121,
+          "iqr_anomalies": 121,
+          "total_anomalies": 121,
+          "anomaly_rate": 0.7229923518164436,
+          "lower_bound": 2012.0,
+          "upper_bound": 2028.0
+        }
+      },
+      "performance": {
+        "ATK": {
+          "z_score_anomalies": 166,
+          "iqr_anomalies": 1536,
+          "total_anomalies": 1536,
+          "anomaly_rate": 3.4563456345634562,
+          "lower_bound": 0.0,
+          "upper_bound": 0.0
+        },
+        "year": {
+          "z_score_anomalies": 855,
+          "iqr_anomalies": 855,
+          "total_anomalies": 855,
+          "anomaly_rate": 1.923942394239424,
+          "lower_bound": 2017.0,
+          "upper_bound": 2025.0
+        },
+        "ATK_zscore": {
+          "z_score_anomalies": 166,
+          "iqr_anomalies": 1536,
+          "total_anomalies": 1536,
+          "anomaly_rate": 3.4563456345634562,
+          "lower_bound": -0.0482873153750928,
+          "upper_bound": -0.0482873153750928
+        },
+        "ATK_minmax": {
+          "z_score_anomalies": 166,
+          "iqr_anomalies": 1536,
+          "total_anomalies": 1536,
+          "anomaly_rate": 3.4563456345634562,
+          "lower_bound": 0.0,
+          "upper_bound": 0.0
+        }
+      },
+      "supply": {
+        "PREMIUM": {
+          "z_score_anomalies": 9,
+          "iqr_anomalies": 242,
+          "total_anomalies": 242,
+          "anomaly_rate": 36.390977443609025,
+          "lower_bound": 538171.7674404744,
+          "upper_bound": 538171.7674404744
+        },
+        "PREMIX": {
+          "z_score_anomalies": 9,
+          "iqr_anomalies": 242,
+          "total_anomalies": 242,
+          "anomaly_rate": 36.390977443609025,
+          "lower_bound": 27707.085704919984,
+          "upper_bound": 27707.085704919984
+        },
+        "KEROSENE": {
+          "z_score_anomalies": 9,
+          "iqr_anomalies": 242,
+          "total_anomalies": 242,
+          "anomaly_rate": 36.390977443609025,
+          "lower_bound": 73014.71062389167,
+          "upper_bound": 73014.71062389167
+        },
+        "ATK": {
+          "z_score_anomalies": 9,
+          "iqr_anomalies": 242,
+          "total_anomalies": 242,
+          "anomaly_rate": 36.390977443609025,
+          "lower_bound": 96731.6217959052,
+          "upper_bound": 96731.6217959052
+        },
+        "GASOIL": {
+          "z_score_anomalies": 9,
+          "iqr_anomalies": 242,
+          "total_anomalies": 242,
+          "anomaly_rate": 36.390977443609025,
+          "lower_bound": 757930.0727546201,
+          "upper_bound": 757930.0727546201
+        },
+        "MGO FOREIGN": {
+          "z_score_anomalies": 9,
+          "iqr_anomalies": 242,
+          "total_anomalies": 242,
+          "anomaly_rate": 36.390977443609025,
+          "lower_bound": 37233.85244585653,
+          "upper_bound": 37233.85244585653
+        },
+        "FUEL OIL": {
+          "z_score_anomalies": 9,
+          "iqr_anomalies": 242,
+          "total_anomalies": 242,
+          "anomaly_rate": 36.390977443609025,
+          "lower_bound": 55101.40642939149,
+          "upper_bound": 55101.40642939149
+        },
+        "LPG": {
+          "z_score_anomalies": 9,
+          "iqr_anomalies": 242,
+          "total_anomalies": 242,
+          "anomaly_rate": 36.390977443609025,
+          "lower_bound": 56707.826,
+          "upper_bound": 56707.826
+        },
+        "year": {
+          "z_score_anomalies": 65,
+          "iqr_anomalies": 65,
+          "total_anomalies": 65,
+          "anomaly_rate": 9.774436090225564,
+          "lower_bound": 1972.0,
+          "upper_bound": 2052.0
+        },
+        "Naphtha (Unified)": {
+          "z_score_anomalies": 9,
+          "iqr_anomalies": 262,
+          "total_anomalies": 262,
+          "anomaly_rate": 39.3984962406015,
+          "lower_bound": 163.08040770101923,
+          "upper_bound": 163.08040770101923
+        }
+      }
+    },
+    "segmentation": {
+      "total_companies": 196,
+      "n_clusters": 5,
+      "clusters": {
+        "cluster_0": {
+          "size": 57,
+          "companies": [
+            "ALINCO OIL",
+            "AMDAWAY OIL",
+            "AMINASER",
+            "AMINSO",
+            "AMSER OIL"
+          ],
+          "avg_petrol_price": 13.566527847380819
+        },
+        "cluster_1": {
+          "size": 102,
+          "companies": [
+            "AEGIS HUILE",
+            "AGAPET",
+            "AI ENERGY",
+            "ALINCO",
+            "ALLIED OIL"
+          ],
+          "avg_petrol_price": 14.015082808404475
+        },
+        "cluster_2": {
+          "size": 30,
+          "companies": [
+            "ALIVE GAS",
+            "AMDAWAY",
+            "ANASSET",
+            "ANDEV",
+            "ANNANDALE"
+          ],
+          "avg_petrol_price": 12.738109805809568
+        },
+        "cluster_3": {
+          "size": 2,
+          "companies": [
+            "BRENT PETROLEUM",
+            "RUNNEL OIL"
+          ],
+          "avg_petrol_price": 24.225644884592533
+        },
+        "cluster_4": {
+          "size": 5,
+          "companies": [
+            "AP OIL  GAS",
+            "BAFFOUR GAS",
+            "SHELLYCO",
+            "THOMHCOF",
+            "THOMHCOF ENERGY"
+          ],
+          "avg_petrol_price": 1.8971166666666668
+        }
+      },
+      "clustering_method": "KMeans"
+    }
+  },
+  "data_quality": {
+    "prices": {
+      "total_rows": 28474,
+      "total_columns": 56,
+      "missing_values": 1890,
+      "completeness_percent": 99.88,
+      "duplicate_rows": 0,
+      "numeric_columns": 49,
+      "text_columns": 7,
+      "memory_usage_mb": 20.87,
+      "numeric_summary": {
+        "company_number": {
+          "mean": 63.80329423333568,
+          "std": 37.510011892868974,
+          "min": 1.0,
+          "max": 136.0,
+          "nulls": 0
+        },
+        "regular_petrol_ron91": {
+          "mean": 13.682391452237127,
+          "std": 12.157062193967231,
+          "min": 0.0,
+          "max": 1488.74,
+          "nulls": 0
+        },
+        "diesel_price": {
+          "mean": 13.50620649269509,
+          "std": 3.8294324343021167,
+          "min": 0.0,
+          "max": 16.9512,
+          "nulls": 0
+        },
+        "lpg_price": {
+          "mean": 13.868137730912409,
+          "std": 5.232731485688246,
+          "min": 0.0,
+          "max": 20.76,
+          "nulls": 0
+        },
+        "year": {
+          "mean": 2024.499876495289,
+          "std": 0.5000088067448533,
+          "min": 2024.0,
+          "max": 2025.0,
+          "nulls": 135
+        }
+      }
+    },
+    "indicative": {
+      "total_rows": 16736,
+      "total_columns": 27,
+      "missing_values": 100416,
+      "completeness_percent": 77.78,
+      "duplicate_rows": 44,
+      "numeric_columns": 14,
+      "text_columns": 13,
+      "memory_usage_mb": 14.58,
+      "numeric_summary": {
+        "price_type": {
+          "mean": null,
+          "std": null,
+          "min": null,
+          "max": null,
+          "nulls": 16736
+        },
+        "period_start": {
+          "mean": 8.656847514340344,
+          "std": 7.498583773367206,
+          "min": 1.0,
+          "max": 16.0,
+          "nulls": 0
+        },
+        "period_end": {
+          "mean": 22.868367590822178,
+          "std": 7.730070470010119,
+          "min": 15.0,
+          "max": 31.0,
+          "nulls": 0
+        },
+        "month": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "nulls": 0
+        },
+        "year": {
+          "mean": 2005.3654995219886,
+          "std": 171.15030937142333,
+          "min": 0.0,
+          "max": 2023.0,
+          "nulls": 0
+        }
+      }
+    },
+    "performance": {
+      "total_rows": 44440,
+      "total_columns": 24,
+      "missing_values": 0,
+      "completeness_percent": 100.0,
+      "duplicate_rows": 10558,
+      "numeric_columns": 4,
+      "text_columns": 20,
+      "memory_usage_mb": 49.42,
+      "numeric_summary": {
+        "ATK": {
+          "mean": 219653.03068158377,
+          "std": 4548876.428008737,
+          "min": 0.0,
+          "max": 287483600.0,
+          "nulls": 0
+        },
+        "year": {
+          "mean": 2020.4551755175517,
+          "std": 1.3671155473475332,
+          "min": 2015.0,
+          "max": 2022.0,
+          "nulls": 0
+        },
+        "ATK_zscore": {
+          "mean": 6.523434657743494e-17,
+          "std": 0.9999999999999999,
+          "min": -0.0482873153750928,
+          "max": 63.15052772164833,
+          "nulls": 0
+        },
+        "ATK_minmax": {
+          "mean": 0.000764054125806076,
+          "std": 0.015823081483635017,
+          "min": 0.0,
+          "max": 1.0,
+          "nulls": 0
+        }
+      }
+    },
+    "price_floors": {
+      "total_rows": 3169,
+      "total_columns": 9,
+      "missing_values": 0,
+      "completeness_percent": 100.0,
+      "duplicate_rows": 0,
+      "numeric_columns": 0,
+      "text_columns": 9,
+      "memory_usage_mb": 1.79
+    },
+    "quality": {
+      "total_rows": 23,
+      "total_columns": 10,
+      "missing_values": 0,
+      "completeness_percent": 100.0,
+      "duplicate_rows": 2,
+      "numeric_columns": 0,
+      "text_columns": 10,
+      "memory_usage_mb": 0.01
+    },
+    "supply": {
+      "total_rows": 665,
+      "total_columns": 50,
+      "missing_values": 0,
+      "completeness_percent": 100.0,
+      "duplicate_rows": 7,
+      "numeric_columns": 31,
+      "text_columns": 19,
+      "memory_usage_mb": 0.9,
+      "numeric_summary": {
+        "PREMIUM": {
+          "mean": 19551393.23749928,
+          "std": 83958083.81847738,
+          "min": 1342.28,
+          "max": 777086900.0,
+          "nulls": 0
+        },
+        "PREMIX": {
+          "mean": 1150871.0435477037,
+          "std": 5009275.676971991,
+          "min": 2.705843788181304,
+          "max": 56542500.0,
+          "nulls": 0
+        },
+        "KEROSENE": {
+          "mean": 2642721.430544328,
+          "std": 11653843.573598824,
+          "min": 1240.6,
+          "max": 158009536.0,
+          "nulls": 0
+        },
+        "ATK": {
+          "mean": 3450598.618382858,
+          "std": 14945755.068039745,
+          "min": 1240.6,
+          "max": 152075000.0,
+          "nulls": 0
+        },
+        "GASOIL": {
+          "mean": 24725424.81034686,
+          "std": 106252547.12086394,
+          "min": 1183.43,
+          "max": 1131544950.0,
+          "nulls": 0
+        }
+      }
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

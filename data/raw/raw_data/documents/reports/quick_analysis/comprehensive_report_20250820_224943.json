@@ -1,0 +1,166 @@
+{
+  "analysis_timestamp": "2025-08-20T22:49:43.106198",
+  "data_summary": {
+    "datasets_analyzed": 4,
+    "total_records": 73602
+  },
+  "statistical_analysis": {
+    "prices": {
+      "records": 28474,
+      "columns": 56,
+      "numeric_columns": 49,
+      "missing_percentage": 0.1185291845192105,
+      "price_statistics": {
+        "regular_petrol_ron91": {
+          "count": 28474.0,
+          "mean": 13.682391452237127,
+          "std": 12.157062193967231,
+          "min": 0.0,
+          "25%": 13.699,
+          "50%": 14.14,
+          "75%": 14.48,
+          "max": 1488.74
+        },
+        "diesel_price": {
+          "count": 28474.0,
+          "mean": 13.50620649269509,
+          "std": 3.8294324343021167,
+          "min": 0.0,
+          "25%": 14.02,
+          "50%": 14.5,
+          "75%": 14.97,
+          "max": 16.9512
+        },
+        "lpg_price": {
+          "count": 28474.0,
+          "mean": 13.868137730912409,
+          "std": 5.232731485688246,
+          "min": 0.0,
+          "25%": 15.06,
+          "50%": 15.35,
+          "75%": 15.56,
+          "max": 20.76
+        }
+      }
+    },
+    "performance": {
+      "records": 44440,
+      "columns": 24,
+      "numeric_columns": 4,
+      "missing_percentage": 0.0
+    },
+    "supply": {
+      "records": 665,
+      "columns": 50,
+      "numeric_columns": 31,
+      "missing_percentage": 0.0
+    },
+    "quality": {
+      "records": 23,
+      "columns": 10,
+      "numeric_columns": 0,
+      "missing_percentage": 0.0
+    }
+  },
+  "price_forecasting": {
+    "regular_petrol_ron91": {
+      "current_price": 13.69,
+      "mean_price": 13.682391452237127,
+      "volatility": 12.157062193967231,
+      "ma_7_day": 14.205714285714285,
+      "ma_30_day": 13.976666666666667,
+      "forecast_7_day": 13.689893329167369,
+      "forecast_30_day": 13.689542839288725,
+      "daily_trend": -1.5238690375837803e-05,
+      "trend_direction": "down"
+    },
+    "diesel_price": {
+      "current_price": 14.74,
+      "mean_price": 13.50620649269509,
+      "volatility": 3.8294324343021167,
+      "ma_7_day": 14.767142857142861,
+      "ma_30_day": 14.000666666666667,
+      "forecast_7_day": 14.740084511733292,
+      "forecast_30_day": 14.740362193142678,
+      "daily_trend": 1.2073104755918234e-05,
+      "trend_direction": "up"
+    },
+    "lpg_price": {
+      "current_price": 15.35,
+      "mean_price": 13.868137730912409,
+      "volatility": 5.232731485688246,
+      "ma_7_day": 14.03285714285715,
+      "ma_30_day": 13.557026666666667,
+      "forecast_7_day": 15.350183710233878,
+      "forecast_30_day": 15.350787329573766,
+      "daily_trend": 2.624431912556275e-05,
+      "trend_direction": "up"
+    }
+  },
+  "anomaly_detection": {
+    "regular_petrol_ron91": {
+      "total_records": 28474,
+      "anomalies_detected": 4317,
+      "anomaly_percentage": 15.161199690946125,
+      "max_price": 1488.74,
+      "min_price": 0.0,
+      "outlier_threshold_upper": 15.651500000000002,
+      "outlier_threshold_lower": 12.5275
+    },
+    "diesel_price": {
+      "total_records": 28474,
+      "anomalies_detected": 2624,
+      "anomaly_percentage": 9.215424597878767,
+      "max_price": 16.9512,
+      "min_price": 0.0,
+      "outlier_threshold_upper": 16.395000000000003,
+      "outlier_threshold_lower": 12.594999999999999
+    },
+    "lpg_price": {
+      "total_records": 28474,
+      "anomalies_detected": 10454,
+      "anomaly_percentage": 36.714195406335605,
+      "max_price": 20.76,
+      "min_price": 0.0,
+      "outlier_threshold_upper": 16.310000000000002,
+      "outlier_threshold_lower": 14.31
+    }
+  },
+  "market_segmentation": {
+    "total_companies": 179,
+    "n_clusters": 5,
+    "cluster_sizes": {
+      "cluster_4": 100,
+      "cluster_1": 40,
+      "cluster_0": 26,
+      "cluster_3": 11,
+      "cluster_2": 2
+    },
+    "clustering_method": "KMeans"
+  },
+  "competitive_intelligence": {
+    "total_companies": 196,
+    "market_mean_price": 13.484238270585555,
+    "market_std": 2.4431388938766196,
+    "price_leaders": {
+      "count": 7,
+      "companies": {
+        "AP OIL  GAS": 0.0,
+        "THOMHCOF": 0.0,
+        "THOMHCOF ENERGY": 0.0,
+        "BAFFOUR GAS": 0.29458333333333336,
+        "EDEN PETROLEUM": 8.033333333333333
+      }
+    },
+    "premium_players": {
+      "count": 2,
+      "companies": {
+        "RUNNEL OIL": 28.605683434343437,
+        "BRENT PETROLEUM": 19.84560633484163
+      }
+    },
+    "mainstream_players": {
+      "count": 187
+    }
+  }
+}

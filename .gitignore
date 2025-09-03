@@ -72,8 +72,11 @@ archived_data/*.xlsx
 archived_scripts/*.log
 archived_sql/*.sql
 backups/**/*
+docs/archived/**/*
+services/*/archived/**/*
 !archived_*/README.md
 !backups/README.md
+!docs/archived/README.md
 
 # Data files
 data/raw/**/*.csv

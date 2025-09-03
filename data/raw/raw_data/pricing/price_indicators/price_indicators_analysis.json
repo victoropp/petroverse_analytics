@@ -1,0 +1,370 @@
+{
+  "file_analysis": {
+    "Petroleum-Price-Indicators-As-at-1st-October-2024.xlsx": {
+      "filename": "Petroleum-Price-Indicators-As-at-1st-October-2024.xlsx",
+      "sheets": [
+        "Media Publication"
+      ],
+      "sheet_count": 1,
+      "sheet_analysis": {
+        "Media Publication": {
+          "shape": [
+            12,
+            5
+          ],
+          "columns": [
+            "Unnamed: 0",
+            "Petroleum Price Indicators (As of 1st October, 2024)",
+            "Unnamed: 2",
+            "Unnamed: 3",
+            "Unnamed: 4"
+          ],
+          "data_types": [],
+          "sample_data": [
+            {
+              "Unnamed: 2": "PBU Effective 1st Oct 2024 (12th - 26th Sept 2024 Averages)",
+              "Unnamed: 3": "Estimate for PBU Effective 16th Oct 2024 (27th Sept - 11th Oct 2024 Averages)",
+              "Unnamed: 4": "% Change"
+            },
+            {
+              "Petroleum Price Indicators (As of 1st October, 2024)": "FX Rate (Commercial Banks Average)(USD/GHS)",
+              "Unnamed: 2": 15.827272727272726,
+              "Unnamed: 3": 15.892121212121213,
+              "Unnamed: 4": -0.004080543055449692
+            },
+            {
+              "Petroleum Price Indicators (As of 1st October, 2024)": "Crude Oil (USD/BBL)",
+              "Unnamed: 2": 74.86954545454545,
+              "Unnamed: 3": 74.84454545454545,
+              "Unnamed: 4": -0.00033391414156735966
+            }
+          ]
+        }
+      }
+    },
+    "Petroleum-Price-Indicators-As-of-11th-April-2024.xlsx": {
+      "filename": "Petroleum-Price-Indicators-As-of-11th-April-2024.xlsx",
+      "sheets": [
+        "Media Publication"
+      ],
+      "sheet_count": 1,
+      "sheet_analysis": {
+        "Media Publication": {
+          "shape": [
+            12,
+            5
+          ],
+          "columns": [
+            "Unnamed: 0",
+            "Petroleum Price Indicators (As of 11th April, 2024)",
+            "Unnamed: 2",
+            "Unnamed: 3",
+            "Unnamed: 4"
+          ],
+          "data_types": [],
+          "sample_data": [
+            {
+              "Unnamed: 2": "PBU Effective 1st April 2024 (12th - 26th Mar 2024 Averages)",
+              "Unnamed: 3": "PBU Effective 16th April 2024 (27th Mar - 11th April 2024 Averages)",
+              "Unnamed: 4": "% Change"
+            },
+            {
+              "Petroleum Price Indicators (As of 11th April, 2024)": "FX Rate (Commercial Banks Average)(USD/GHS)",
+              "Unnamed: 2": 13.055454545454547,
+              "Unnamed: 3": 13.380013333333334,
+              "Unnamed: 4": -0.024256985385075924
+            },
+            {
+              "Petroleum Price Indicators (As of 11th April, 2024)": "Crude Oil (USD/BBL)",
+              "Unnamed: 2": 85.44318181818181,
+              "Unnamed: 3": 90.39150000000002,
+              "Unnamed: 4": 0.05791355233408724
+            }
+          ]
+        }
+      }
+    },
+    "Petroleum-Price-Indicators-As-of-11th-March-2024.xlsx": {
+      "filename": "Petroleum-Price-Indicators-As-of-11th-March-2024.xlsx",
+      "sheets": [
+        "Media Publication"
+      ],
+      "sheet_count": 1,
+      "sheet_analysis": {
+        "Media Publication": {
+          "shape": [
+            12,
+            5
+          ],
+          "columns": [
+            "Unnamed: 0",
+            "Petroleum Price Indicators (As of 11th March, 2024)",
+            "Unnamed: 2",
+            "Unnamed: 3",
+            "Unnamed: 4"
+          ],
+          "data_types": [],
+          "sample_data": [
+            {
+              "Unnamed: 2": "PBU Effective 1st Mar 2024 (12th - 26th Feb 2024 Averages)",
+              "Unnamed: 3": "PBU Effective 16th Mar 2024 (27th Feb - 11th Mar 2024 Averages)",
+              "Unnamed: 4": "% Change"
+            },
+            {
+              "Petroleum Price Indicators (As of 11th March, 2024)": "FX Rate (Commercial Banks Average)(USD/GHS)",
+              "Unnamed: 2": 12.603942424242426,
+              "Unnamed: 3": 12.768666666666665,
+              "Unnamed: 4": -0.01290066118291433
+            },
+            {
+              "Petroleum Price Indicators (As of 11th March, 2024)": "Crude Oil (USD/BBL)",
+              "Unnamed: 2": 85.14545454545456,
+              "Unnamed: 3": 85.03099999999998,
+              "Unnamed: 4": -0.00134422378817034
+            }
+          ]
+        }
+      }
+    },
+    "Petroleum-Price-Indicators-As-of-11th-September-2023-2.xlsx": {
+      "filename": "Petroleum-Price-Indicators-As-of-11th-September-2023-2.xlsx",
+      "sheets": [
+        "Media Publication"
+      ],
+      "sheet_count": 1,
+      "sheet_analysis": {
+        "Media Publication": {
+          "shape": [
+            12,
+            5
+          ],
+          "columns": [
+            "Unnamed: 0",
+            "Petroleum Price Indicators (As of 11th September, 2023)",
+            "Unnamed: 2",
+            "Unnamed: 3",
+            "Unnamed: 4"
+          ],
+          "data_types": [],
+          "sample_data": [
+            {
+              "Unnamed: 2": "PBU Effective 1st Sept 2023 (12th - 26th August 2023 Averages)",
+              "Unnamed: 3": "PBU Effective 16th Sept 2023 (27th August - 11th September 2023 Averages)",
+              "Unnamed: 4": "% Change"
+            },
+            {
+              "Petroleum Price Indicators (As of 11th September, 2023)": "FX Rate (Commercial Banks Average)(USD/GHS)",
+              "Unnamed: 2": 11.395,
+              "Unnamed: 3": 11.473000000000003,
+              "Unnamed: 4": -0.006798570556960093
+            },
+            {
+              "Petroleum Price Indicators (As of 11th September, 2023)": "Crude Oil (USD/BBL)",
+              "Unnamed: 2": 85.69949999999999,
+              "Unnamed: 3": 89.9045,
+              "Unnamed: 4": 0.04906679735587738
+            }
+          ]
+        }
+      }
+    },
+    "Petroleum-Price-Indicators-As-of-16th-April-2024.xlsx": {
+      "filename": "Petroleum-Price-Indicators-As-of-16th-April-2024.xlsx",
+      "sheets": [
+        "Media Publication"
+      ],
+      "sheet_count": 1,
+      "sheet_analysis": {
+        "Media Publication": {
+          "shape": [
+            12,
+            5
+          ],
+          "columns": [
+            "Unnamed: 0",
+            "Petroleum Price Indicators (As of 16th April, 2024)",
+            "Unnamed: 2",
+            "Unnamed: 3",
+            "Unnamed: 4"
+          ],
+          "data_types": [],
+          "sample_data": [
+            {
+              "Unnamed: 2": "PBU Effective 16th April 2024 (27th Mar - 11th April 2024 Averages)",
+              "Unnamed: 3": "Estimate for PBU Effective 1st May 2024 (12th - 26th April 2024 Averages)",
+              "Unnamed: 4": "% Change"
+            },
+            {
+              "Petroleum Price Indicators (As of 16th April, 2024)": "FX Rate (Commercial Banks Average)(USD/GHS)",
+              "Unnamed: 2": 13.380013333333334,
+              "Unnamed: 3": 13.481818181818182,
+              "Unnamed: 4": -0.007551269948303019
+            },
+            {
+              "Petroleum Price Indicators (As of 16th April, 2024)": "Crude Oil (USD/BBL)",
+              "Unnamed: 2": 90.39150000000002,
+              "Unnamed: 3": 91.4081818181818,
+              "Unnamed: 4": 0.011247537856787115
+            }
+          ]
+        }
+      }
+    }
+  },
+  "structure_patterns": {},
+  "date_coverage": {},
+  "extraction_strategy": {
+    "approach": "time_series_extraction",
+    "file_types": {
+      "price_indicators": {
+        "pattern": "Petroleum-Price-Indicators-As-of-*.xlsx",
+        "frequency": "irregular (market updates)",
+        "content": "pricing components and calculations"
+      },
+      "exchange_rates": {
+        "pattern": "Exchange-Rate-for-*.xlsx",
+        "frequency": "as needed",
+        "content": "USD/GHS exchange rates"
+      }
+    },
+    "data_components": [
+      "Petroleum Price Indicators (As of 11th April, 2024)",
+      "Petroleum Price Indicators (As of 11th September, 2023)",
+      "Petroleum Price Indicators (As of 16th April, 2024)",
+      "Petroleum Price Indicators (As of 11th March, 2024)",
+      "Petroleum Price Indicators (As of 1st October, 2024)"
+    ],
+    "challenges": [
+      "Irregular file frequency (not bi-weekly like indicative prices)",
+      "Variable sheet structures across files",
+      "Complex pricing component breakdowns",
+      "Exchange rate integration requirements",
+      "Date parsing from filenames"
+    ],
+    "implementation_plan": [
+      "1. Parse dates from filenames for time series ordering",
+      "2. Extract pricing component breakdowns",
+      "3. Handle exchange rate data separately",
+      "4. Normalize currency values (USD to GHS)",
+      "5. Create unified pricing indicators dataset",
+      "6. Link with indicative pricing for comprehensive analysis"
+    ]
+  },
+  "file_summary": {
+    "total_files": 23,
+    "indicators_files": 22,
+    "exchange_rate_files": 1
+  },
+  "date_patterns": [
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-11th-April-2024.xlsx",
+      "date_string": "11th-April-2024",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-11th-March-2024.xlsx",
+      "date_string": "11th-March-2024",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-11th-September-2023-2.xlsx",
+      "date_string": "11th-September-2023-2",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-16th-April-2024.xlsx",
+      "date_string": "16th-April-2024",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-19th-April-2024.xlsx",
+      "date_string": "19th-April-2024",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-21st-August-2024.xlsx",
+      "date_string": "21st-August-2024",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-21st-May-2024.xlsx",
+      "date_string": "21st-May-2024",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-22nd-April-2024.xlsx",
+      "date_string": "22nd-April-2024",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-22nd-May-2024.xlsx",
+      "date_string": "22nd-May-2024",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-23rd-May-2024.xlsx",
+      "date_string": "23rd-May-2024",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-24th-April-2024.xlsx",
+      "date_string": "24th-April-2024",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-24th-May-2024.xlsx",
+      "date_string": "24th-May-2024",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-28th-May-20241-3.xlsx",
+      "date_string": "28th-May-20241-3",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-29th-July-2025.xlsx",
+      "date_string": "29th-July-2025",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-30th-May-2024-3.xlsx",
+      "date_string": "30th-May-2024-3",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-3rd-May-2024-1.xlsx",
+      "date_string": "3rd-May-2024-1",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-5th-September-2023.xlsx",
+      "date_string": "5th-September-2023",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-7th-May-2024-2.xlsx",
+      "date_string": "7th-May-2024-2",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-7th-September-2023-1.xlsx",
+      "date_string": "7th-September-2023-1",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-8th-May-2024-1.xlsx",
+      "date_string": "8th-May-2024-1",
+      "parsed_date": null
+    },
+    {
+      "filename": "Petroleum-Price-Indicators-As-of-8th-September-2023.xlsx",
+      "date_string": "8th-September-2023",
+      "parsed_date": null
+    }
+  ],
+  "metadata": {
+    "analysis_date": "2025-08-24T04:46:07.824847",
+    "base_path": "petroverse\\raw_data\\pricing\\price_indicators",
+    "total_files": 23
+  }
+}

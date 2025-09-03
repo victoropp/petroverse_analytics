@@ -129,6 +129,28 @@ interface CompanyGrowth {
   growth_rank: number;
 }
 
+interface SupplyChainResilience {
+  product_name: string;
+  product_category: string;
+  supplier_count: number;
+  total_transactions: number;
+  total_volume_mt: number;
+  total_volume_liters: number;
+  avg_transaction_size: number;
+  volatility_coefficient: number;
+  avg_quality_score: number;
+  market_presence_months: number;
+  supply_risk_level: string;
+  volatility_level: string;
+  supplier_threshold_q1?: number;
+  supplier_threshold_median?: number;
+  supplier_threshold_q3?: number;
+  volatility_threshold_q1?: number;
+  volatility_threshold_median?: number;
+  volatility_threshold_q3?: number;
+  volume_inclusion_threshold?: number;
+}
+
 // Color palettes
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 const GRADIENT_COLORS = {
@@ -141,11 +163,25 @@ const GRADIENT_COLORS = {
 
 // Helper functions
 function formatNumber(num: number | null | undefined): string {
-  if (num === null || num === undefined) return '0';
+  if (num === null || num === undefined || isNaN(num)) return '0';
   if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
   if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
   if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
   return num.toFixed(2);
+}
+
+// Safe division helper to prevent NaN
+function safeDivide(numerator: number, denominator: number, defaultValue: number = 0): number {
+  if (!denominator || denominator === 0 || isNaN(numerator) || isNaN(denominator)) {
+    return defaultValue;
+  }
+  return numerator / denominator;
+}
+
+// Safe percentage calculation
+function safePercentage(value: number, total: number, decimals: number = 1): string {
+  const percentage = safeDivide(value * 100, total, 0);
+  return percentage.toFixed(decimals);
 }
 
 function formatVolume(value: number, unit: 'liters' | 'mt'): string {
@@ -164,6 +200,7 @@ export default function EnhancedBDCDashboard() {
   const [operationalData, setOperationalData] = useState<any>(null);
   const [growthData, setGrowthData] = useState<any>(null);
   const [networkData, setNetworkData] = useState<any>(null);
+  const [supplyChainData, setSupplyChainData] = useState<{supply_chain_resilience: SupplyChainResilience[]} | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -198,30 +235,58 @@ export default function EnhancedBDCDashboard() {
           
           const params = getFilterParams();
           
+          // Log filter parameters for debugging supply chain resilience
+          console.log('Supply Chain Resilience - Filter params:', {
+            startDate,
+            endDate,
+            selectedCompanies: selectedCompanies.length,
+            selectedProducts: selectedProducts.length,
+            topN,
+            volumeUnit,
+            paramsString: params.toString()
+          });
+          
           // Fetch all endpoints in parallel
-          const [performance, operational, growth, network] = await Promise.all([
+          const [performance, operational, growth, network, supplyChain] = await Promise.all([
             fetch(`http://localhost:8003/api/v2/bdc/performance?${params}`, { signal: abortController.signal }),
             fetch(`http://localhost:8003/api/v2/bdc/operational?${params}`, { signal: abortController.signal }),
             fetch(`http://localhost:8003/api/v2/bdc/growth?${params}`, { signal: abortController.signal }),
-            fetch(`http://localhost:8003/api/v2/bdc/network?${params}`, { signal: abortController.signal })
+            fetch(`http://localhost:8003/api/v2/bdc/network?${params}`, { signal: abortController.signal }),
+            fetch(`http://localhost:8003/api/v2/bdc/supply-chain?${params}`, { signal: abortController.signal })
           ]);
           
-          if (!performance.ok || !operational.ok || !growth.ok || !network.ok) {
+          if (!performance.ok || !operational.ok || !growth.ok || !network.ok || !supplyChain.ok) {
             throw new Error('Failed to fetch BDC analytics data');
           }
           
-          const [perfData, opData, growData, netData] = await Promise.all([
+          const [perfData, opData, growData, netData, supplyData] = await Promise.all([
             performance.json(),
             operational.json(),
             growth.json(),
-            network.json()
+            network.json(),
+            supplyChain.json()
           ]);
+          
+          // Log supply chain data thresholds to verify dynamic calculation
+          if (supplyData?.supply_chain_resilience?.[0]) {
+            console.log('Supply Chain Data Received - Dynamic Thresholds:', {
+              volumeThreshold: supplyData.supply_chain_resilience[0].volume_inclusion_threshold,
+              supplierQ1: supplyData.supply_chain_resilience[0].supplier_threshold_q1,
+              supplierMedian: supplyData.supply_chain_resilience[0].supplier_threshold_median,
+              supplierQ3: supplyData.supply_chain_resilience[0].supplier_threshold_q3,
+              volatilityQ1: supplyData.supply_chain_resilience[0].volatility_threshold_q1,
+              volatilityMedian: supplyData.supply_chain_resilience[0].volatility_threshold_median,
+              volatilityQ3: supplyData.supply_chain_resilience[0].volatility_threshold_q3,
+              productCount: supplyData.supply_chain_resilience.length
+            });
+          }
           
           if (!abortController.signal.aborted) {
             setPerformanceData(perfData);
             setOperationalData(opData);
             setGrowthData(growData);
             setNetworkData(netData);
+            setSupplyChainData(supplyData);
             setError(null);
           }
         } catch (err) {
@@ -321,14 +386,17 @@ export default function EnhancedBDCDashboard() {
     category: p.product_category
   })) || [];
 
-  const companyPerformanceRadar = operational_consistency?.slice(0, 6).map((c: OperationalMetrics) => ({
-    company: c.company_name.length > 15 ? c.company_name.substring(0, 15) + '...' : c.company_name,
-    volume: (c.volume_rank / operational_consistency.length) * 100,
-    consistency: (c.consistency_rank / operational_consistency.length) * 100,
-    diversity: (c.diversity_rank / operational_consistency.length) * 100,
-    quality: c.avg_quality_score * 100,
-    efficiency: c.monthly_avg_volume / 1000 // Scale for visibility
-  })) || [];
+  const companyPerformanceRadar = operational_consistency?.slice(0, 6).map((c: OperationalMetrics) => {
+    const totalCompanies = operational_consistency.length || 1; // Prevent division by zero
+    return {
+      company: c.company_name.length > 15 ? c.company_name.substring(0, 15) + '...' : c.company_name,
+      volume: Math.min(100, Math.max(0, ((c.volume_rank || 0) / totalCompanies) * 100)),
+      consistency: Math.min(100, Math.max(0, ((c.consistency_rank || 0) / totalCompanies) * 100)),
+      diversity: Math.min(100, Math.max(0, ((c.diversity_rank || 0) / totalCompanies) * 100)),
+      quality: Math.min(100, Math.max(0, (c.avg_quality_score || 0) * 100)),
+      efficiency: (c.monthly_avg_volume || 0) / 1000 // Scale for visibility
+    };
+  }) || [];
 
   const growthLeaders = company_growth?.slice(0, 10).map((c: CompanyGrowth) => ({
     name: c.company_name,
@@ -451,64 +519,98 @@ export default function EnhancedBDCDashboard() {
           </Card>
         </div>
 
-        {/* Row 1: Market Share & Operational Consistency */}
+        {/* Row 1: Supply Chain Resilience & Operational Consistency */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ExpandableChart
-            title="Market Share & Concentration Analysis"
-            description="Company distribution with HHI-based concentration metrics"
-            icon={<BarChart3 className="h-5 w-5 text-white" />}
+            title="Product Supply Chain Resilience"
+            description="Supply diversity, volatility analysis and risk assessment by product"
+            icon={<Network className="h-5 w-5 text-white" />}
           >
             <ResponsiveContainer width="100%" height={350}>
-              <ComposedChart data={top_companies.slice(0, topN)}>
+              <ScatterChart data={supplyChainData?.supply_chain_resilience || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis 
-                  dataKey="company_name" 
+                  dataKey="supplier_count" 
                   stroke="#9CA3AF"
-                  angle={-45}
-                  textAnchor="end"
-                  height={100}
                   tick={{ fontSize: 10 }}
+                  label={{ value: 'Supplier Count', position: 'insideBottom', offset: -5, style: { fill: '#9CA3AF', fontSize: 11 } }}
                 />
-                <YAxis yAxisId="left" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
-                <YAxis yAxisId="right" orientation="right" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
+                <YAxis 
+                  dataKey="volatility_coefficient" 
+                  stroke="#9CA3AF" 
+                  tick={{ fontSize: 10 }}
+                  label={{ value: 'Volatility %', angle: -90, position: 'insideLeft', style: { fill: '#9CA3AF', fontSize: 11 } }}
+                />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
                   labelStyle={{ color: '#F3F4F6' }}
+                  content={({ payload }) => {
+                    if (payload && payload[0]) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-gray-800 border border-gray-700 p-3 rounded shadow-lg">
+                          <p className="text-white font-medium mb-2">{data.product_name}</p>
+                          <p className="text-gray-300 text-sm">Category: <span className="text-blue-400">{data.product_category}</span></p>
+                          <p className="text-gray-300 text-sm">Suppliers: <span className="text-green-400">{data.supplier_count}</span></p>
+                          <p className="text-gray-300 text-sm">Volatility: <span className="text-yellow-400">{data.volatility_coefficient}%</span></p>
+                          <p className="text-gray-300 text-sm">Volume: <span className="text-blue-300">{formatVolume(data.total_volume_mt, 'mt')}</span></p>
+                          <p className="text-gray-300 text-sm">Quality: <span className="text-purple-400">{(data.avg_quality_score * 100).toFixed(1)}%</span></p>
+                          <p className="text-gray-300 text-sm">Risk Level: <span className={`${
+                            data.supply_risk_level === 'High Risk' ? 'text-red-400' :
+                            data.supply_risk_level === 'Medium Risk' ? 'text-yellow-400' : 
+                            data.supply_risk_level === 'Low Risk' ? 'text-green-400' : 'text-blue-400'
+                          }`}>{data.supply_risk_level}</span></p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
-                <Legend />
-                <Bar yAxisId="left" dataKey="total_volume_mt" fill="#3B82F6" name="Volume (MT)" />
-                <Line 
-                  yAxisId="right" 
-                  type="monotone" 
-                  dataKey="market_share_percent" 
-                  stroke="#10B981" 
-                  strokeWidth={2}
-                  name="Market Share (%)"
-                  dot={{ fill: '#10B981' }}
-                />
-              </ComposedChart>
+                <Scatter dataKey="total_volume_mt" fill="#3B82F6">
+                  {(supplyChainData?.supply_chain_resilience || []).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={
+                      entry.supply_risk_level === 'High Risk' ? '#EF4444' :
+                      entry.supply_risk_level === 'Medium Risk' ? '#F59E0B' :
+                      entry.supply_risk_level === 'Low Risk' ? '#10B981' : '#3B82F6'
+                    } />
+                  ))}
+                </Scatter>
+              </ScatterChart>
             </ResponsiveContainer>
             <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
               <div className="bg-gray-700 p-2 rounded">
-                <span className="text-gray-400">Top 3 Share:</span>
-                <span className="text-white ml-2 font-medium">
-                  {top_companies.slice(0, 3).reduce((sum, c) => sum + c.market_share_percent, 0).toFixed(1)}%
+                <span className="text-gray-400">Products Tracked:</span>
+                <span className="text-white ml-2 font-medium">{supplyChainData?.supply_chain_resilience?.length || 0}</span>
+              </div>
+              <div className="bg-gray-700 p-2 rounded">
+                <span className="text-gray-400">High Risk Products:</span>
+                <span className="text-red-400 ml-2 font-medium">
+                  {supplyChainData?.supply_chain_resilience?.filter(p => p.supply_risk_level === 'High Risk').length || 0}
                 </span>
               </div>
               <div className="bg-gray-700 p-2 rounded">
-                <span className="text-gray-400">Active BDCs:</span>
-                <span className="text-white ml-2 font-medium">{top_companies.length}</span>
-              </div>
-              <div className="bg-gray-700 p-2 rounded">
-                <span className="text-gray-400">HHI Index:</span>
-                <span className={`ml-2 font-medium ${
-                  currentHHI < 1500 ? 'text-green-400' :
-                  currentHHI < 2500 ? 'text-yellow-400' : 'text-red-400'
-                }`}>
-                  {formatNumber(currentHHI)}
+                <span className="text-gray-400">Avg Suppliers:</span>
+                <span className="text-white ml-2 font-medium">
+                  {supplyChainData?.supply_chain_resilience && supplyChainData.supply_chain_resilience.length > 0 ? 
+                    (supplyChainData.supply_chain_resilience.reduce((sum, p) => sum + (p.supplier_count || 0), 0) / supplyChainData.supply_chain_resilience.length).toFixed(1)
+                    : '0'}
                 </span>
               </div>
             </div>
+            {/* Display dynamic thresholds for transparency */}
+            {supplyChainData?.supply_chain_resilience?.[0] && (
+              <div className="mt-3 p-2 bg-gray-800 rounded text-xs text-gray-400">
+                <div className="flex items-center gap-1 mb-1">
+                  <Info className="h-3 w-3" />
+                  <span className="text-gray-300">All thresholds dynamically calculated from current data:</span>
+                </div>
+                <div className="space-y-1 ml-4">
+                  <div>Volume Filter: Products ≥ {formatNumber(supplyChainData.supply_chain_resilience[0]?.volume_inclusion_threshold || 0)} MT (10th percentile)</div>
+                  <div>Supplier Risk: Q1={(supplyChainData.supply_chain_resilience[0]?.supplier_threshold_q1 || 0).toFixed(0)}, Median={(supplyChainData.supply_chain_resilience[0]?.supplier_threshold_median || 0).toFixed(0)}, Q3={(supplyChainData.supply_chain_resilience[0]?.supplier_threshold_q3 || 0).toFixed(0)}</div>
+                  <div>Volatility CV: Q1={(supplyChainData.supply_chain_resilience[0]?.volatility_threshold_q1 || 0).toFixed(0)}%, Median={(supplyChainData.supply_chain_resilience[0]?.volatility_threshold_median || 0).toFixed(0)}%, Q3={(supplyChainData.supply_chain_resilience[0]?.volatility_threshold_q3 || 0).toFixed(0)}%</div>
+                </div>
+              </div>
+            )}
           </ExpandableChart>
 
           <ExpandableChart
@@ -711,7 +813,7 @@ export default function EnhancedBDCDashboard() {
                 <div className="bg-gray-700 p-2 rounded">
                   <span className="text-gray-400">Outliers:</span>
                   <span className="text-yellow-400 ml-2 font-medium">
-                    {quality_metrics.outlier_count} ({((quality_metrics.outlier_count / quality_metrics.total_records) * 100).toFixed(1)}%)
+                    {quality_metrics.outlier_count} ({quality_metrics.total_records > 0 ? ((quality_metrics.outlier_count / quality_metrics.total_records) * 100).toFixed(1) : '0'}%)
                   </span>
                 </div>
                 <div className="bg-gray-700 p-2 rounded">

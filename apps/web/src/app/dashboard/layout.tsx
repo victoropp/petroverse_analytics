@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, Factory, Fuel, Package2, TrendingUp, Menu, X, Activity, DollarSign, Shield, Building2, Truck, Users, Brain } from 'lucide-react';
+import { BarChart3, Factory, Fuel, Package2, TrendingUp, Menu, X, Activity, DollarSign, Shield, Building2, Truck, Users, Brain, MapPin, Map } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -20,6 +20,8 @@ export default function DashboardLayout({
     { name: 'OMC Performance', href: '/dashboard/omc', icon: Fuel },
     { name: 'OMC Comprehensive', href: '/dashboard/omc/comprehensive', icon: Activity },
     { name: 'Products Analytics', href: '/dashboard/products', icon: Package2 },
+    { name: 'Regional Supply', href: '/dashboard/supply', icon: MapPin },
+    { name: 'Ghana Map', href: '/dashboard/ghana-map', icon: Map },
     { name: 'Investor/Financial', href: '/dashboard/investor', icon: DollarSign },
     { name: 'Policy Makers', href: '/dashboard/policy', icon: Shield },
     { name: 'Company Analysis', href: '/dashboard/company', icon: Building2 },

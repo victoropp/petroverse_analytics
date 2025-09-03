@@ -1,7 +1,7 @@
 """
 PetroVerse Analytics Service - Production Grade API
 """
-from fastapi import FastAPI, Depends, HTTPException, WebSocket, Header
+from fastapi import FastAPI, Depends, HTTPException, WebSocket, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from contextlib import asynccontextmanager
@@ -30,6 +30,14 @@ from advanced_analytics import (
     get_correlation_analysis,
     get_outlier_detection,
     get_volume_forecast
+)
+from supply_enhanced_analytics import (
+    get_supply_performance_metrics,
+    get_supply_regional_analytics,
+    get_supply_growth_analytics,
+    get_supply_resilience_analytics,
+    get_supply_quality_metrics,
+    get_supply_quality_trends_data
 )
 
 # Redis imports with proper error handling
@@ -1223,6 +1231,29 @@ async def get_bdc_network_analytics(
             product_ids=product_ids_list
         )
 
+@app.get("/api/v2/bdc/supply-chain")
+async def get_bdc_supply_chain_analytics(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    company_ids: Optional[str] = Query(None),
+    product_ids: Optional[str] = Query(None)
+):
+    """Get BDC supply chain resilience analytics"""
+    from bdc_enhanced_analytics import get_bdc_supply_chain_analytics
+    
+    # Parse comma-separated IDs
+    company_ids_list = [int(id) for id in company_ids.split(',')] if company_ids else None
+    product_ids_list = [int(id) for id in product_ids.split(',')] if product_ids else None
+    
+    async with db_pool.acquire() as conn:
+        return await get_bdc_supply_chain_analytics(
+            conn,
+            start_date=start_date,
+            end_date=end_date,
+            company_ids=company_ids_list,
+            product_ids=product_ids_list
+        )
+
 @app.get("/api/v2/omc/performance")
 async def get_omc_performance():
     """OMC performance analytics - NO AUTH for development"""
@@ -2125,11 +2156,245 @@ async def websocket_analytics(websocket: WebSocket, tenant_id: str):
     finally:
         await websocket.close()
 
+# Supply Chain Analytics Endpoints
+@app.get("/api/v2/supply/performance")
+async def get_supply_performance(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    region_ids: Optional[str] = Query(None),
+    product_ids: Optional[str] = Query(None),
+    top_n: int = Query(10)
+):
+    """Get supply chain performance metrics"""
+    # Parse comma-separated IDs
+    region_ids_list = region_ids.split(',') if region_ids else None
+    product_ids_list = [int(id) for id in product_ids.split(',')] if product_ids else None
+    
+    return await get_supply_performance_metrics(
+        db_pool,
+        start_date=start_date,
+        end_date=end_date,
+        region_ids=region_ids_list,
+        product_ids=product_ids_list,
+        top_n=top_n
+    )
+
+@app.get("/api/v2/supply/regional")
+async def get_supply_regional(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    regions: Optional[str] = Query(None),
+    products: Optional[str] = Query(None),
+    volume_unit: Optional[str] = Query('liters'),
+    top_n: Optional[int] = Query(20),
+    min_quality: Optional[float] = Query(None)
+):
+    """Get regional supply analytics with filters"""
+    # Parse region and product filters
+    region_list = None
+    if regions:
+        region_list = [r.strip() for r in regions.split(',')]
+    
+    # For now, use first selected product (analytics functions will be updated for multiple products)
+    selected_product = None
+    if products:
+        product_list = [p.strip() for p in products.split(',')]
+        if product_list:
+            selected_product = product_list[0]
+    
+    return await get_supply_regional_analytics(
+        db_pool,
+        start_date=start_date,
+        end_date=end_date,
+        region_ids=region_list,
+        product=selected_product,
+        min_quality=min_quality
+    )
+
+@app.get("/api/v2/supply/growth")
+async def get_supply_growth(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    regions: Optional[str] = Query(None),
+    products: Optional[str] = Query(None),
+    volume_unit: Optional[str] = Query('liters'),
+    top_n: Optional[int] = Query(20)
+):
+    """Get supply growth analytics with filters"""
+    # Parse region and product filters
+    region_list = None
+    if regions:
+        region_list = [r.strip() for r in regions.split(',')]
+    
+    # For now, use first selected product (analytics functions will be updated for multiple products)
+    selected_product = None
+    if products:
+        product_list = [p.strip() for p in products.split(',')]
+        if product_list:
+            selected_product = product_list[0]
+    
+    return await get_supply_growth_analytics(
+        db_pool,
+        start_date=start_date,
+        end_date=end_date,
+        region_ids=region_list,
+        product=selected_product
+    )
+
+@app.get("/api/v2/supply/resilience")
+async def get_supply_resilience(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    regions: Optional[str] = Query(None),
+    products: Optional[str] = Query(None),
+    volume_unit: Optional[str] = Query('liters'),
+    top_n: Optional[int] = Query(20)
+):
+    """Get supply chain resilience analytics with filters"""
+    # Parse region and product filters
+    region_list = None
+    if regions:
+        region_list = [r.strip() for r in regions.split(',')]
+    
+    # For now, use first selected product (analytics functions will be updated for multiple products)
+    selected_product = None
+    if products:
+        product_list = [p.strip() for p in products.split(',')]
+        if product_list:
+            selected_product = product_list[0]
+    
+    return await get_supply_resilience_analytics(
+        db_pool,
+        start_date=start_date,
+        end_date=end_date,
+        region_ids=region_list,
+        product=selected_product
+    )
+
+@app.get("/api/v2/supply/quality")
+async def get_supply_quality(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    regions: Optional[str] = Query(None),
+    products: Optional[str] = Query(None),
+    volume_unit: Optional[str] = Query('liters'),
+    top_n: Optional[int] = Query(20)
+):
+    """Get supply data quality metrics with filters"""
+    # Parse region and product filters
+    region_list = None
+    if regions:
+        region_list = [r.strip() for r in regions.split(',')]
+    
+    # For now, use first selected product (analytics functions will be updated for multiple products)
+    selected_product = None
+    if products:
+        product_list = [p.strip() for p in products.split(',')]
+        if product_list:
+            selected_product = product_list[0]
+    
+    return await get_supply_quality_metrics(
+        db_pool,
+        start_date=start_date,
+        end_date=end_date,
+        region_ids=region_list,
+        product=selected_product
+    )
+
+@app.get("/api/v2/supply/quality-trends")
+async def get_supply_quality_trends_endpoint(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    regions: Optional[str] = Query(None),
+    products: Optional[str] = Query(None)
+):
+    """Get supply data quality score trends over time"""
+    # Parse region and product filters
+    region_list = None
+    if regions:
+        region_list = [r.strip() for r in regions.split(',')]
+    
+    # For now, use first selected product (analytics functions will be updated for multiple products)
+    selected_product = None
+    if products:
+        product_list = [p.strip() for p in products.split(',')]
+        if product_list:
+            selected_product = product_list[0]
+    
+    return await get_supply_quality_trends_data(
+        db_pool,
+        start_date=start_date,
+        end_date=end_date,
+        region_ids=region_list,
+        product_ids=None,
+        product=selected_product
+    )
+
+@app.get("/api/v2/supply/products")
+async def get_supply_products():
+    """Get list of standardized products from products table"""
+    async with db_pool.acquire() as conn:
+        # First get standardized products
+        query = """
+        SELECT DISTINCT product_name 
+        FROM petroverse.products 
+        WHERE product_name IS NOT NULL 
+        ORDER BY product_name
+        """
+        results = await conn.fetch(query)
+        products = [row['product_name'] for row in results]
+        return {"products": products}
+
+@app.get("/api/v2/supply/date-range")
+async def get_supply_date_range():
+    """Get min and max dates from supply data"""
+    async with db_pool.acquire() as conn:
+        query = """
+        SELECT 
+            MIN(period_date) as min_date,
+            MAX(period_date) as max_date
+        FROM petroverse.supply_data 
+        WHERE period_date IS NOT NULL
+        """
+        result = await conn.fetchrow(query)
+        return {
+            "min_date": result['min_date'].isoformat() if result['min_date'] else None,
+            "max_date": result['max_date'].isoformat() if result['max_date'] else None
+        }
+
+@app.get("/api/v2/supply/regions")
+async def get_supply_regions():
+    """Get list of unique regions from supply data with basic stats"""
+    async with db_pool.acquire() as conn:
+        query = """
+        SELECT 
+            region,
+            COUNT(*) as record_count,
+            MIN(period_date) as first_date,
+            MAX(period_date) as last_date,
+            SUM(quantity_original) as total_quantity
+        FROM petroverse.supply_data 
+        WHERE region IS NOT NULL 
+        GROUP BY region
+        ORDER BY total_quantity DESC
+        """
+        results = await conn.fetch(query)
+        regions = []
+        for row in results:
+            regions.append({
+                "name": row['region'],
+                "record_count": row['record_count'],
+                "first_date": row['first_date'].isoformat() if row['first_date'] else None,
+                "last_date": row['last_date'].isoformat() if row['last_date'] else None,
+                "total_quantity": float(row['total_quantity']) if row['total_quantity'] else 0
+            })
+        return {"regions": regions}
+
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=8003,
         reload=True,
         log_level="info"
     )

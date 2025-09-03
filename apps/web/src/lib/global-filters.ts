@@ -20,6 +20,9 @@ export interface GlobalFilters {
   selectedProducts: string[]; // product IDs
   selectedProductCategories: string[]; // product categories
   
+  // Quality filters
+  minQualityScore: number; // minimum quality threshold (0.0 to 1.0)
+  
   // Display options
   topN: number; // for limiting results
   volumeUnit: 'liters' | 'mt'; // display unit preference
@@ -38,6 +41,7 @@ export interface GlobalFiltersActions {
   setSelectedBusinessTypes: (types: string[]) => void;
   setSelectedProducts: (productIds: string[]) => void;
   setSelectedProductCategories: (categories: string[]) => void;
+  setMinQualityScore: (score: number) => void;
   setTopN: (n: number) => void;
   setVolumeUnit: (unit: 'liters' | 'mt') => void;
   
@@ -66,6 +70,7 @@ export const useGlobalFilters = create<GlobalFiltersStore>()(
       selectedBusinessTypes: ['BDC', 'OMC'], // Both by default for supply chain view
       selectedProducts: [],
       selectedProductCategories: [],
+      minQualityScore: 0.75, // Default to 75% minimum quality
       topN: 10,
       volumeUnit: 'liters',
       filterOptions: null,
@@ -92,6 +97,10 @@ export const useGlobalFilters = create<GlobalFiltersStore>()(
         set({ selectedProductCategories: categories });
       },
       
+      setMinQualityScore: (score: number) => {
+        set({ minQualityScore: score });
+      },
+      
       setTopN: (n: number) => {
         set({ topN: n });
       },
@@ -108,6 +117,7 @@ export const useGlobalFilters = create<GlobalFiltersStore>()(
           selectedBusinessTypes: ['BDC', 'OMC'],
           selectedProducts: [],
           selectedProductCategories: [],
+          minQualityScore: 0.75,
           topN: 10,
           volumeUnit: 'liters',
         });
@@ -155,6 +165,11 @@ export const useGlobalFilters = create<GlobalFiltersStore>()(
         
         if (state.selectedProductCategories.length > 0) {
           params.append('product_categories', state.selectedProductCategories.join(','));
+        }
+        
+        // Add quality filter
+        if (state.minQualityScore > 0) {
+          params.append('min_quality', state.minQualityScore.toString());
         }
         
         params.append('top_n', state.topN.toString());

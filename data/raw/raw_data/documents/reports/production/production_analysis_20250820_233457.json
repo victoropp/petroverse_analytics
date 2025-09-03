@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "analysis_date": "2025-08-20T23:34:55.687493",
+    "execution_time_seconds": 2.230923,
+    "version": "1.0.0",
+    "environment": "PRODUCTION"
+  },
+  "data_summary": {
+    "datasets_loaded": 6,
+    "total_rows": 93507,
+    "total_columns": 176,
+    "datasets": {
+      "prices": {
+        "file": "ex_pump_prices_cleaned.csv",
+        "rows": 28474,
+        "columns": 56,
+        "memory_mb": 20.870922088623047,
+        "dtypes": {

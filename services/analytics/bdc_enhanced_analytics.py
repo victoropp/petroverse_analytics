@@ -47,59 +47,45 @@ async def get_bdc_operational_metrics(
     
     # 1. Operational Consistency Metrics
     operational_consistency = await conn.fetch(f"""
-        WITH company_activity AS (
+        WITH company_metrics AS (
             SELECT 
-                c.company_id,
                 c.company_name,
-                COUNT(DISTINCT t.full_date) as active_days,
                 COUNT(DISTINCT CONCAT(t.year, '-', t.month)) as active_months,
-                MIN(t.full_date) as first_activity,
-                MAX(t.full_date) as last_activity,
                 COUNT(DISTINCT f.product_id) as products_handled,
                 COUNT(f.transaction_id) as total_transactions,
                 SUM(f.volume_mt) as total_volume_mt,
                 SUM(f.volume_liters) as total_volume_liters,
-                AVG(f.data_quality_score) as avg_quality_score
+                AVG(f.data_quality_score) as avg_quality_score,
+                COUNT(DISTINCT t.full_date) as active_days,
+                (MAX(t.full_date) - MIN(t.full_date)) as operational_span_days
             FROM petroverse.fact_bdc_transactions f
             JOIN petroverse.companies c ON f.company_id = c.company_id
             JOIN petroverse.time_dimension t ON f.date_id = t.date_id
             WHERE {where_clause}
-            GROUP BY c.company_id, c.company_name
-        ),
-        consistency_metrics AS (
-            SELECT 
-                company_id,
-                company_name,
-                active_months,
-                products_handled,
-                total_transactions,
-                total_volume_mt,
-                total_volume_liters,
-                avg_quality_score,
-                CASE 
-                    WHEN (last_activity - first_activity) > 0 THEN
-                        active_months::float / (EXTRACT(EPOCH FROM (last_activity - first_activity)) / 86400 / 30)
-                    ELSE 1.0
-                END as consistency_score,
-                total_volume_mt / NULLIF(active_months, 0) as monthly_avg_volume,
-                total_transactions::float / NULLIF(active_months, 0) as monthly_avg_transactions
-            FROM company_activity
+            GROUP BY c.company_name
         )
         SELECT 
             company_name,
             active_months,
             products_handled,
             total_transactions,
-            total_volume_mt,
-            total_volume_liters,
-            consistency_score,
-            monthly_avg_volume,
-            monthly_avg_transactions,
-            avg_quality_score,
+            total_volume_mt::numeric(15,2) as total_volume_mt,
+            total_volume_liters::numeric(15,2) as total_volume_liters,
+            avg_quality_score::numeric(5,4) as avg_quality_score,
+            active_days,
+            operational_span_days,
+            CASE 
+                WHEN operational_span_days > 0 THEN
+                    active_months::float / GREATEST(operational_span_days / 30.0, 1.0)
+                ELSE 1.0
+            END::numeric(5,3) as consistency_score,
+            (total_volume_mt / NULLIF(active_months, 0))::numeric(12,2) as monthly_avg_volume_mt,
+            (total_transactions::float / NULLIF(active_months, 0))::numeric(8,2) as monthly_avg_transactions,
+            (total_volume_mt / NULLIF(active_days, 0))::numeric(12,2) as daily_avg_volume_mt,
             RANK() OVER (ORDER BY total_volume_mt DESC) as volume_rank,
-            RANK() OVER (ORDER BY consistency_score DESC) as consistency_rank,
+            RANK() OVER (ORDER BY avg_quality_score DESC) as quality_rank,
             RANK() OVER (ORDER BY products_handled DESC) as diversity_rank
-        FROM consistency_metrics
+        FROM company_metrics
         ORDER BY total_volume_mt DESC
         LIMIT 20
     """, *params)
@@ -435,6 +421,145 @@ async def get_bdc_growth_analytics(
         "yoy_growth": [dict(row) for row in yoy_growth],
         "qoq_growth": [dict(row) for row in qoq_growth],
         "company_growth": [dict(row) for row in company_growth]
+    }
+
+
+async def get_bdc_supply_chain_analytics(
+    conn: asyncpg.Connection,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    company_ids: Optional[List[int]] = None,
+    product_ids: Optional[List[int]] = None
+) -> Dict[str, Any]:
+    """
+    Calculate supply chain resilience analytics for BDC operations.
+    Focuses on product supply chain risk, volatility, and diversification metrics.
+    """
+    
+    # Build WHERE clause
+    where_conditions = ["1=1"]
+    params = []
+    param_count = 0
+    
+    if start_date:
+        param_count += 1
+        where_conditions.append(f"t.full_date >= ${param_count}")
+        params.append(datetime.strptime(start_date, '%Y-%m-%d').date())
+        
+    if end_date:
+        param_count += 1
+        where_conditions.append(f"t.full_date <= ${param_count}")
+        params.append(datetime.strptime(end_date, '%Y-%m-%d').date())
+        
+    if company_ids:
+        param_count += 1
+        where_conditions.append(f"f.company_id = ANY(${param_count})")
+        params.append(company_ids)
+        
+    if product_ids:
+        param_count += 1
+        where_conditions.append(f"f.product_id = ANY(${param_count})")
+        params.append(product_ids)
+        
+    where_clause = " AND ".join(where_conditions)
+    
+    # Product Supply Chain Resilience Analysis with dynamic thresholds
+    supply_chain_resilience = await conn.fetch(f"""
+        WITH initial_product_data AS (
+            SELECT 
+                p.product_name,
+                p.product_category,
+                COUNT(DISTINCT f.company_id) as supplier_count,
+                COUNT(f.transaction_id) as total_transactions,
+                SUM(f.volume_mt) as total_volume_mt,
+                AVG(f.volume_mt) as avg_transaction_size,
+                STDDEV(f.volume_mt) as volume_volatility,
+                AVG(f.data_quality_score) as avg_quality_score,
+                COUNT(DISTINCT CONCAT(t.year, '-', t.month)) as active_months,
+                SUM(f.volume_liters) as total_volume_liters
+            FROM petroverse.fact_bdc_transactions f
+            JOIN petroverse.products p ON f.product_id = p.product_id
+            JOIN petroverse.time_dimension t ON f.date_id = t.date_id
+            WHERE {where_clause}
+            GROUP BY p.product_name, p.product_category
+        ),
+        -- Calculate volume threshold dynamically (exclude bottom 10th percentile by volume)
+        volume_threshold AS (
+            SELECT 
+                PERCENTILE_CONT(0.10) WITHIN GROUP (ORDER BY total_volume_mt) as min_volume_threshold
+            FROM initial_product_data
+        ),
+        -- Filter products using dynamic threshold
+        product_analysis AS (
+            SELECT 
+                ipd.*
+            FROM initial_product_data ipd
+            CROSS JOIN volume_threshold vt
+            WHERE ipd.total_volume_mt >= COALESCE(vt.min_volume_threshold, 0)
+        ),
+        -- Calculate statistical thresholds from actual data
+        supplier_thresholds AS (
+            SELECT 
+                PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY supplier_count) as supplier_q1,
+                PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY supplier_count) as supplier_median,
+                PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY supplier_count) as supplier_q3
+            FROM product_analysis
+        ),
+        volatility_thresholds AS (
+            SELECT 
+                PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY cv) as cv_q1,
+                PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY cv) as cv_median,
+                PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY cv) as cv_q3
+            FROM (
+                SELECT (COALESCE(volume_volatility, 0) / NULLIF(avg_transaction_size, 0) * 100) as cv
+                FROM product_analysis
+                WHERE avg_transaction_size > 0
+            ) cv_calc
+        )
+        SELECT 
+            pa.product_name,
+            pa.product_category,
+            pa.supplier_count,
+            pa.total_transactions,
+            pa.total_volume_mt::numeric(12,2) as total_volume_mt,
+            pa.total_volume_liters::numeric(15,2) as total_volume_liters,
+            pa.avg_transaction_size::numeric(10,2) as avg_transaction_size,
+            (COALESCE(pa.volume_volatility, 0) / NULLIF(pa.avg_transaction_size, 0) * 100)::numeric(8,2) as volatility_coefficient,
+            pa.avg_quality_score::numeric(5,3) as avg_quality_score,
+            pa.active_months as market_presence_months,
+            -- Dynamic risk levels based on actual data distribution
+            CASE 
+                WHEN pa.supplier_count < st.supplier_q1 THEN 'High Risk'
+                WHEN pa.supplier_count < st.supplier_median THEN 'Medium Risk'
+                WHEN pa.supplier_count < st.supplier_q3 THEN 'Low Risk'
+                ELSE 'Diversified'
+            END as supply_risk_level,
+            -- Dynamic volatility levels based on actual CV distribution
+            CASE
+                WHEN (COALESCE(pa.volume_volatility, 0) / NULLIF(pa.avg_transaction_size, 0) * 100) < vt.cv_q1 THEN 'Stable'
+                WHEN (COALESCE(pa.volume_volatility, 0) / NULLIF(pa.avg_transaction_size, 0) * 100) < vt.cv_median THEN 'Moderate'
+                WHEN (COALESCE(pa.volume_volatility, 0) / NULLIF(pa.avg_transaction_size, 0) * 100) < vt.cv_q3 THEN 'Volatile'
+                ELSE 'Highly Volatile'
+            END as volatility_level,
+            -- Include threshold values for transparency
+            st.supplier_q1::numeric(10,1) as supplier_threshold_q1,
+            st.supplier_median::numeric(10,1) as supplier_threshold_median,
+            st.supplier_q3::numeric(10,1) as supplier_threshold_q3,
+            vt.cv_q1::numeric(10,1) as volatility_threshold_q1,
+            vt.cv_median::numeric(10,1) as volatility_threshold_median,
+            vt.cv_q3::numeric(10,1) as volatility_threshold_q3,
+            -- Include volume threshold for transparency
+            volt.min_volume_threshold::numeric(12,2) as volume_inclusion_threshold
+        FROM product_analysis pa
+        CROSS JOIN supplier_thresholds st
+        CROSS JOIN volatility_thresholds vt
+        CROSS JOIN volume_threshold volt
+        ORDER BY pa.total_volume_mt DESC
+        LIMIT 12
+    """, *params)
+
+    return {
+        "supply_chain_resilience": [dict(row) for row in supply_chain_resilience]
     }
 
 

@@ -1,0 +1,669 @@
+{
+  "structure_analysis": {},
+  "file_patterns": {},
+  "data_samples": {},
+  "extraction_strategy": {
+    "approach": "batch_processing",
+    "file_organization": {
+      "structure": "year_folders",
+      "pattern": "bi_weekly_pricing",
+      "frequency": "24_files_per_year"
+    },
+    "data_extraction": {
+      "method": "pandas_excel_processing",
+      "sheet_handling": "multi_sheet_support",
+      "date_extraction": "filename_parsing"
+    },
+    "challenges": [],
+    "recommendations": [
+      "Implement robust filename date parsing",
+      "Handle multiple Excel sheet formats",
+      "Create unified data schema for all years",
+      "Implement error handling for corrupt files",
+      "Design bi-weekly aggregation logic",
+      "Currency normalization across years",
+      "Data validation and quality checks"
+    ]
+  },
+  "files_by_year": {
+    "2017": [
+      "Indicative-Prices-1st-15th-July-2017-1.xlsx",
+      "Indicative-Prices-For-16th-28th-February-2017-1.xlsx",
+      "Indicative-Prices-For-16th-30th-April-2017-1.xlsx",
+      "Indicative-Prices-For-16th-30th-June-2017-1.xlsx",
+      "Indicative-Prices-For-16th-30th-November-2017-1.xlsx",
+      "Indicative-Prices-For-16th-30th-September-2017-1.xlsx",
+      "Indicative-Prices-For-16th-31st-August-2017-1.xlsx",
+      "Indicative-Prices-For-16th-31st-December-2017-1.xlsx",
+      "Indicative-Prices-For-16th-31st-January-2017-1.xlsx",
+      "Indicative-Prices-For-16th-31st-July-2017-1.xlsx",
+      "Indicative-Prices-For-16th-31st-March-2017-1.xlsx",
+      "Indicative-Prices-For-16th-31st-May-2017-1.xlsx",
+      "Indicative-Prices-For-16th-31st-October-2017-1.xlsx",
+      "Indicative-Prices-For-1st-15th-April-2017-1-1.xlsx",
+      "Indicative-Prices-For-1st-15th-August-2017-1.xlsx",
+      "Indicative-Prices-For-1st-15th-December-2017-1.xlsx",
+      "Indicative-Prices-For-1st-15th-June-2017-1.xlsx",
+      "Indicative-Prices-For-1st-15th-May-2017-1.xlsx",
+      "Indicative-Prices-For-1st-15th-November-107-1.xlsx",
+      "Indicative-Prices-For-1st-15th-October-2017-1.xlsx",
+      "Indicative-Prices-For-1st-15th-September-2017-1.xlsx",
+      "Indicative-Prices-From-1st-15th-February-2017-1.xlsx",
+      "Indicative-Prices-From-1st-15th-January-2017.xlsx",
+      "Indicative-Prices-From-1st-15th-March-2017-1.xlsx"
+    ],
+    "2018": [
+      "Indicative-Prices-For-16th-28th-February-2018-1.xlsx",
+      "Indicative-Prices-For-16th-30th-April-2018-1.xlsx",
+      "Indicative-Prices-For-16th-30th-June-2018.xlsx",
+      "Indicative-Prices-For-16th-30th-November-2018.xlsx",
+      "Indicative-Prices-For-16th-30th-September-2018-1.xlsx",
+      "Indicative-Prices-For-16th-31st-August-2018.xlsx",
+      "Indicative-Prices-For-16th-31st-December-2018.xlsx",
+      "Indicative-Prices-For-16th-31st-January-2018-1.xlsx",
+      "Indicative-Prices-For-16th-31st-July-2018.xlsx",
+      "Indicative-Prices-For-16th-31st-March-2018-1.xlsx",
+      "Indicative-Prices-For-16th-31st-May-2018.xlsx",
+      "Indicative-Prices-For-16th-31st-October-2018-1.xlsx",
+      "Indicative-Prices-For-1st-15th-April-2018-1.xlsx",
+      "Indicative-Prices-For-1st-15th-August-2018.xlsx",
+      "Indicative-Prices-For-1st-15th-December-2018-1.xlsx",
+      "Indicative-Prices-For-1st-15th-February-2018.xlsx",
+      "Indicative-Prices-For-1st-15th-January-2018.xlsx",
+      "Indicative-Prices-For-1st-15th-July-2018-1.xlsx",
+      "Indicative-Prices-For-1st-15th-June-2018.xlsx",
+      "Indicative-Prices-For-1st-15th-March-2018.xlsx",
+      "Indicative-Prices-For-1st-15th-May-2018.xlsx",
+      "Indicative-Prices-For-1st-15th-November-2018-1.xlsx",
+      "Indicative-Prices-For-1st-15th-October-2018.xlsx",
+      "Indicative-Prices-For-1st-15th-September-2018.xlsx"
+    ],
+    "2019": [
+      "Indicative-Prices-for-16th-30th-April-2019-1.xlsx",
+      "Indicative-Prices-for-16th-30th-June-2019-1.xlsx",
+      "Indicative-Prices-for-16th-31st-January-2019-1.xlsx",
+      "Indicative-Prices-for-16th-31st-March-2019-1.xlsx",
+      "Indicative-Prices-for-16th-31st-May-2019-1.xlsx",
+      "Indicative-Prices-for-1st-15th-Feb-2019-1.xlsx",
+      "Indicative-Prices-for-1st-15th-January-2019-1.xlsx",
+      "Indicative-Prices-for-1st-15th-June-2019-1.xlsx",
+      "Indicative-Prices-for-1st-15th-March-2019-1.xlsx",
+      "Indicative-Prices-for-1st-15th-May-2019-1.xlsx"
+    ],
+    "2020": [
+      "Indicative-Prices-for-16th-29th-February-2020-1.xlsx",
+      "Indicative-Prices-for-16th-30th-April-2020-1.xlsx",
+      "Indicative-Prices-for-16th-30th-June-2020-1.xlsx",
+      "Indicative-Prices-for-16th-30th-Nov-2020-1.xlsx",
+      "Indicative-Prices-for-16th-30th-Sept-2020-1.xlsx",
+      "Indicative-Prices-for-16th-31st-August-2020-1.xlsx",
+      "Indicative-Prices-for-16th-31st-Dec-2020-1.xlsx",
+      "Indicative-Prices-for-16th-31st-January-2020-1.xlsx",
+      "Indicative-Prices-for-16th-31st-July-2020-1.xlsx",
+      "Indicative-Prices-for-16th-31st-May-2020-1.xlsx",
+      "Indicative-Prices-for-16th-31st-Oct-2020-1.xlsx",
+      "Indicative-Prices-for-1st-15th-April-2020-1.xlsx",
+      "Indicative-Prices-for-1st-15th-August-2020-1.xlsx",
+      "Indicative-Prices-for-1st-15th-Dec-2020-1.xlsx",
+      "Indicative-Prices-for-1st-15th-February-2020-1.xlsx",
+      "Indicative-Prices-for-1st-15th-January-2020-1.xlsx",
+      "Indicative-Prices-for-1st-15th-July-2020-Rev-1.xlsx",
+      "Indicative-Prices-for-1st-15th-June-2020-1.xlsx",
+      "Indicative-Prices-for-1st-15th-March-2020-1.xlsx",
+      "Indicative-Prices-for-1st-15th-May-2020-1.xlsx",
+      "Indicative-Prices-for-1st-15th-Nov-2020-1.xlsx",
+      "Indicative-Prices-for-1st-15th-Oct-2020-1.xlsx",
+      "Indicative-Prices-for-1st-15th-Sept-2020-1.xlsx"
+    ],
+    "2021": [
+      "Indicative-Prices-for-16th-28th-Feb-2021-1.xlsx",
+      "Indicative-Prices-for-16th-30th-Apr-2021-1.xlsx",
+      "Indicative-Prices-for-16th-30th-June-2021-1.xlsx",
+      "Indicative-Prices-for-16th-30th-September-2021-1.xlsx",
+      "Indicative-Prices-for-16th-31st-August-2021-1.xlsx",
+      "Indicative-Prices-for-16th-31st-December-2021-1.xlsx",
+      "Indicative-Prices-for-16th-31st-Jan-2021-1.xlsx",
+      "Indicative-Prices-for-16th-31st-July-2021-1.xlsx",
+      "Indicative-Prices-for-16th-31st-Mar-2021-1.xlsx",
+      "Indicative-Prices-for-16th-31st-May-2021-1.xlsx",
+      "Indicative-Prices-for-16th-31st-November-2021-1.xlsx",
+      "Indicative-Prices-for-16th-31st-October-2021-1.xlsx",
+      "Indicative-Prices-for-1st-15th-Apr-2021-1.xlsx",
+      "Indicative-Prices-for-1st-15th-August-2021-1.xlsx",
+      "Indicative-Prices-for-1st-15th-December-2021-1.xlsx",
+      "Indicative-Prices-for-1st-15th-Feb-2021-1.xlsx",
+      "Indicative-Prices-for-1st-15th-Jan-2021-1.xlsx",
+      "Indicative-Prices-for-1st-15th-July-2021-1.xlsx",
+      "Indicative-Prices-for-1st-15th-June-2021-1.xlsx",
+      "Indicative-Prices-for-1st-15th-Mar-2021-1.xlsx",
+      "Indicative-Prices-for-1st-15th-May-2021-1.xlsx",
+      "Indicative-Prices-for-1st-15th-November-2021-1.xlsx",
+      "Indicative-Prices-for-1st-15th-October-2021-1.xlsx",
+      "Indicative-Prices-for-1st-15th-September-2021-1.xlsx"
+    ],
+    "2022": [
+      "Indicative-Prices-for-16th-28th-February-2022.xlsx",
+      "Indicative-Prices-for-16th-30th-April-2022.xlsx",
+      "Indicative-Prices-for-16th-30th-June-2022.xlsx",
+      "Indicative-Prices-for-16th-30th-November-2022-1.xlsx",
+      "Indicative-Prices-for-16th-30th-September-2022-1.xlsx",
+      "Indicative-Prices-for-16th-31st-August-2022-1.xlsx",
+      "Indicative-Prices-for-16th-31st-December-2022-1.xlsx",
+      "Indicative-Prices-for-16th-31st-Jan-2022-1.xlsx",
+      "Indicative-Prices-for-16th-31st-July-2022-1.xlsx",
+      "Indicative-Prices-for-16th-31st-March-2022-1.xlsx",
+      "Indicative-Prices-for-16th-31st-May-2022-1.xlsx",
+      "Indicative-Prices-for-16th-31st-October-2022-1.xlsx",
+      "Indicative-Prices-for-1st-15th-April-2022-1.xlsx",
+      "Indicative-Prices-for-1st-15th-August-2022-1.xlsx",
+      "Indicative-Prices-for-1st-15th-December-2022-1.xlsx",
+      "Indicative-Prices-for-1st-15th-February-2022-1.xlsx",
+      "Indicative-Prices-for-1st-15th-Jan-2022-1.xlsx",
+      "Indicative-Prices-for-1st-15th-June-2022-1.xlsx",
+      "Indicative-Prices-for-1st-15th-March-2022-1.xlsx",
+      "Indicative-Prices-for-1st-15th-November-2022-1.xlsx",
+      "Indicative-Prices-for-1st-15th-October-2022-1.xlsx",
+      "Indicative-Prices-for-1st-15th-September-2022-1.xlsx"
+    ],
+    "2023": [
+      "Indicative-Prices-for-16th-28th-Feb-2023-2.xlsx",
+      "Indicative-Prices-for-16th-30th-April-2023-2.xlsx",
+      "Indicative-Prices-for-16th-30th-June-2023-2.xlsx",
+      "Indicative-Prices-for-16th-31st-Jan-2023-2.xlsx",
+      "Indicative-Prices-for-16th-31st-July-2023-3.xlsx",
+      "Indicative-Prices-for-16th-31st-July-2023-4.xlsx",
+      "Indicative-Prices-for-16th-31st-Mar-2023-2.xlsx",
+      "Indicative-Prices-for-1st-15th-April-2023-2.xlsx",
+      "Indicative-Prices-for-1st-15th-Feb-2023-2.xlsx",
+      "Indicative-Prices-for-1st-15th-Jan-2023-2.xlsx",
+      "Indicative-Prices-for-1st-15th-July-2023-2.xlsx",
+      "Indicative-Prices-for-1st-15th-June-2023-2.xlsx",
+      "Indicative-Prices-for-1st-15th-Mar-2023-2.xlsx",
+      "Indicative-Prices-for-1st-15th-May-2023-2.xlsx",
+      "Indicative-Prices-for-Publication-in-National-Dailies-16th-30th-November-2023-8.xlsx",
+      "Indicative-Prices-for-Publication-in-National-Dailies-16th-30th-September-2023-4.xlsx",
+      "Indicative-Prices-for-Publication-in-National-Dailies-16th-31st-August-2023-2.xlsx",
+      "Indicative-Prices-for-Publication-in-National-Dailies-16th-31st-October-2023-6.xlsx",
+      "Indicative-Prices-for-Publication-in-National-Dailies-1st-15th-August-2023-1.xlsx",
+      "Indicative-Prices-for-Publication-in-National-Dailies-1st-15th-December-2023-9.xlsx",
+      "Indicative-Prices-for-Publication-in-National-Dailies-1st-15th-November-2023-7.xlsx",
+      "Indicative-Prices-for-Publication-in-National-Dailies-1st-15th-October-2023-5.xlsx",
+      "Indicative-Prices-for-Publication-in-National-Dailies-1st-15th-September-2023-3.xlsx",
+      "Indicative-Prices-for-Publication-in-National-Dailies-1st-15th-September-2023.xlsx"
+    ]
+  },
+  "filename_patterns": {
+    "date_ranges": {
+      "1st-15th": 76,
+      "16th-end": 75
+    },
+    "prefixes": {
+      "For": 44,
+      "From": 3,
+      "for": 103
+    },
+    "suffixes": {
+      "-1": 110,
+      "clean": 41
+    },
+    "formats": {}
+  },
+  "sample_analysis": {
+    "2017": [
+      {
+        "filename": "Indicative-Prices-1st-15th-July-2017-1.xlsx",
+        "sheets": [
+          "BDCs Ex-Refinery Prices",
+          "OMCs and LPGMCs Ex-Pump Prices"
+        ],
+        "sheet_count": 2,
+        "sample_structure": {
+          "columns": [
+            "Unnamed: 0",
+            "Unnamed: 1",
+            "Unnamed: 2",
+            "Unnamed: 3",
+            "Unnamed: 4",
+            "Unnamed: 5",
+            "Unnamed: 6",
+            "Unnamed: 7",
+            "Unnamed: 8"
+          ],
+          "column_count": 9,
+          "sample_rows": 10,
+          "first_few_rows": [
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": "NATIONAL PETROLEUM AUTHORITY",
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN
+            },
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": NaN,
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN
+            },
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": NaN,
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN
+            }
+          ]
+        }
+      },
+      {
+        "filename": "Indicative-Prices-For-16th-28th-February-2017-1.xlsx",
+        "sheets": [
+          "BDCs Ex-Refinery Prices",
+          "OMCs and LPGMCs Ex-Pump Prices"
+        ],
+        "sheet_count": 2,
+        "sample_structure": {
+          "columns": [
+            "Unnamed: 0",
+            "Unnamed: 1",
+            "Unnamed: 2",
+            "Unnamed: 3",
+            "Unnamed: 4",
+            "Unnamed: 5",
+            "Unnamed: 6",
+            "Unnamed: 7",
+            "Unnamed: 8"
+          ],
+          "column_count": 9,
+          "sample_rows": 10,
+          "first_few_rows": [
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": "NATIONAL PETROLEUM AUTHORITY",
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN
+            },
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": NaN,
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN
+            },
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": NaN,
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN
+            }
+          ]
+        }
+      }
+    ],
+    "2020": [
+      {
+        "filename": "Indicative-Prices-for-16th-29th-February-2020-1.xlsx",
+        "sheets": [
+          "BDCs Ex-Refinery Prices",
+          "OMCs and LPGMCs Ex-Pump Prices"
+        ],
+        "sheet_count": 2,
+        "sample_structure": {
+          "columns": [
+            "Unnamed: 0",
+            "Unnamed: 1",
+            "Unnamed: 2",
+            "Unnamed: 3",
+            "Unnamed: 4",
+            "Unnamed: 5",
+            "Unnamed: 6",
+            "Unnamed: 7",
+            "Unnamed: 8"
+          ],
+          "column_count": 9,
+          "sample_rows": 10,
+          "first_few_rows": [
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": "NATIONAL PETROLEUM AUTHORITY",
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN
+            },
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": NaN,
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN
+            },
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": NaN,
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN
+            }
+          ]
+        }
+      },
+      {
+        "filename": "Indicative-Prices-for-16th-30th-April-2020-1.xlsx",
+        "sheets": [
+          "BDCs Ex-Refinery Prices",
+          "OMCs and LPGMCs Ex-Pump Prices"
+        ],
+        "sheet_count": 2,
+        "sample_structure": {
+          "columns": [
+            "Unnamed: 0",
+            "Unnamed: 1",
+            "Unnamed: 2",
+            "Unnamed: 3",
+            "Unnamed: 4",
+            "Unnamed: 5",
+            "Unnamed: 6",
+            "Unnamed: 7",
+            "Unnamed: 8"
+          ],
+          "column_count": 9,
+          "sample_rows": 10,
+          "first_few_rows": [
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": "NATIONAL PETROLEUM AUTHORITY",
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN
+            },
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": NaN,
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN
+            },
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": NaN,
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN
+            }
+          ]
+        }
+      }
+    ],
+    "2023": [
+      {
+        "filename": "Indicative-Prices-for-16th-28th-Feb-2023-2.xlsx",
+        "sheets": [
+          "BDCs Ex-Refinery Prices",
+          "OMCs and LPGMCs Ex-Pump Prices"
+        ],
+        "sheet_count": 2,
+        "sample_structure": {
+          "columns": [
+            "Unnamed: 0",
+            "Unnamed: 1",
+            "Unnamed: 2",
+            "Unnamed: 3",
+            "Unnamed: 4",
+            "Unnamed: 5",
+            "Unnamed: 6",
+            "Unnamed: 7",
+            "Unnamed: 8",
+            "Unnamed: 9"
+          ],
+          "column_count": 10,
+          "sample_rows": 10,
+          "first_few_rows": [
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": "NATIONAL PETROLEUM AUTHORITY",
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN,
+              "Unnamed: 9": NaN
+            },
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": NaN,
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN,
+              "Unnamed: 9": NaN
+            },
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": NaN,
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN,
+              "Unnamed: 9": NaN
+            }
+          ]
+        }
+      },
+      {
+        "filename": "Indicative-Prices-for-16th-30th-April-2023-2.xlsx",
+        "sheets": [
+          "BDCs Ex-Refinery Prices",
+          "OMCs and LPGMCs Ex-Pump Prices"
+        ],
+        "sheet_count": 2,
+        "sample_structure": {
+          "columns": [
+            "Unnamed: 0",
+            "Unnamed: 1",
+            "Unnamed: 2",
+            "Unnamed: 3",
+            "Unnamed: 4",
+            "Unnamed: 5",
+            "Unnamed: 6",
+            "Unnamed: 7",
+            "Unnamed: 8",
+            "Unnamed: 9"
+          ],
+          "column_count": 10,
+          "sample_rows": 10,
+          "first_few_rows": [
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": "NATIONAL PETROLEUM AUTHORITY",
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN,
+              "Unnamed: 9": NaN
+            },
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": NaN,
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN,
+              "Unnamed: 9": NaN
+            },
+            {
+              "Unnamed: 0": NaN,
+              "Unnamed: 1": NaN,
+              "Unnamed: 2": NaN,
+              "Unnamed: 3": NaN,
+              "Unnamed: 4": NaN,
+              "Unnamed: 5": NaN,
+              "Unnamed: 6": NaN,
+              "Unnamed: 7": NaN,
+              "Unnamed: 8": NaN,
+              "Unnamed: 9": NaN
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "date_patterns": {
+    "period_types": {
+      "first_half": 75,
+      "second_half": 75
+    },
+    "sample_patterns": [
+      {
+        "period_type": "first_half",
+        "filename": "Indicative-Prices-1st-15th-July-2017-1.xlsx",
+        "year": "2017",
+        "month": "July",
+        "start_day": 1,
+        "end_day": 15
+      },
+      {
+        "period_type": "second_half",
+        "filename": "Indicative-Prices-For-16th-28th-February-2017-1.xlsx",
+        "year": "2017",
+        "month": "February",
+        "start_day": 16,
+        "end_day": 28
+      },
+      {
+        "period_type": "second_half",
+        "filename": "Indicative-Prices-For-16th-30th-April-2017-1.xlsx",
+        "year": "2017",
+        "month": "April",
+        "start_day": 16,
+        "end_day": 30
+      },
+      {
+        "period_type": "second_half",
+        "filename": "Indicative-Prices-For-16th-30th-June-2017-1.xlsx",
+        "year": "2017",
+        "month": "June",
+        "start_day": 16,
+        "end_day": 30
+      },
+      {
+        "period_type": "second_half",
+        "filename": "Indicative-Prices-For-16th-30th-November-2017-1.xlsx",
+        "year": "2017",
+        "month": "November",
+        "start_day": 16,
+        "end_day": 30
+      },
+      {
+        "period_type": "second_half",
+        "filename": "Indicative-Prices-For-16th-30th-September-2017-1.xlsx",
+        "year": "2017",
+        "month": "September",
+        "start_day": 16,
+        "end_day": 30
+      },
+      {
+        "period_type": "second_half",
+        "filename": "Indicative-Prices-For-16th-31st-August-2017-1.xlsx",
+        "year": "2017",
+        "month": "August",
+        "start_day": 16,
+        "end_day": 31
+      },
+      {
+        "period_type": "second_half",
+        "filename": "Indicative-Prices-For-16th-31st-December-2017-1.xlsx",
+        "year": "2017",
+        "month": "December",
+        "start_day": 16,
+        "end_day": 31
+      },
+      {
+        "period_type": "second_half",
+        "filename": "Indicative-Prices-For-16th-31st-January-2017-1.xlsx",
+        "year": "2017",
+        "month": "January",
+        "start_day": 16,
+        "end_day": 31
+      },
+      {
+        "period_type": "second_half",
+        "filename": "Indicative-Prices-For-16th-31st-July-2017-1.xlsx",
+        "year": "2017",
+        "month": "July",
+        "start_day": 16,
+        "end_day": 31
+      }
+    ]
+  },
+  "metadata": {
+    "analysis_date": "2025-08-24T03:29:18.308457",
+    "base_path": "petroverse\\raw_data\\pricing\\indicative_prices",
+    "total_years": 7,
+    "total_files": 151
+  }
+}

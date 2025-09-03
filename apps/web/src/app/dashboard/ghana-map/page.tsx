@@ -45,6 +45,29 @@ const LayersControlOverlay = dynamic(() => import('react-leaflet').then(mod => m
 const LayerGroup = dynamic(() => import('react-leaflet').then(mod => mod.LayerGroup), { ssr: false });
 const GeoJSON = dynamic(() => import('react-leaflet').then(mod => mod.GeoJSON), { ssr: false });
 
+// Ghana country boundary (simplified)
+const ghanaBoundary = {
+  type: "Feature",
+  properties: { name: "Ghana" },
+  geometry: {
+    type: "Polygon",
+    coordinates: [[
+      [-3.26, 4.73], [-3.11, 5.13], [-2.93, 5.10], [-2.73, 5.00],
+      [-2.69, 5.29], [-2.86, 5.27], [-2.96, 5.64], [-2.95, 6.40],
+      [-2.73, 7.01], [-2.56, 7.38], [-2.49, 8.20], [-2.69, 8.66],
+      [-2.96, 9.40], [-2.76, 9.40], [-2.75, 9.91], [-2.94, 10.64],
+      [-2.91, 10.97], [-2.83, 11.00], [-1.20, 11.01], [-0.92, 10.98],
+      [-0.77, 10.94], [-0.44, 11.10], [-0.04, 11.12], [0.02, 11.02],
+      [-0.05, 10.71], [0.37, 10.29], [0.37, 9.47], [0.26, 9.43],
+      [0.46, 8.68], [0.71, 8.31], [0.53, 7.41], [0.51, 6.94],
+      [0.84, 6.28], [0.99, 5.85], [1.19, 6.09], [1.20, 5.79],
+      [0.70, 5.75], [0.32, 5.57], [0.00, 5.54], [-0.15, 5.57],
+      [-0.51, 5.34], [-1.06, 5.00], [-1.96, 4.71], [-2.10, 4.73],
+      [-2.93, 5.10], [-3.26, 4.73]
+    ]]
+  }
+};
+
 // Enhanced Ghana regions with real coordinates and polygons
 const ghanaRegions = {
   'Greater Accra': { 
@@ -1374,9 +1397,11 @@ export default function GhanaMapDashboard() {
                     size="sm"
                     onClick={() => {
                       if (mapRef.current) {
-                        mapRef.current.setView([7.9465, -1.0232], 6.5);
+                        mapRef.current.setView([8.0, -1.2], 6.8);
+                        mapRef.current.setMaxBounds([[4.6, -3.3], [11.2, 1.2]]);
                       }
                     }}
+                    title="Reset to Ghana view"
                   >
                     <Navigation className="w-4 h-4" />
                   </Button>
@@ -1394,19 +1419,37 @@ export default function GhanaMapDashboard() {
                   </div>
                 ) : (
                   <MapContainer
-                    center={[7.9465, -1.0232]}
-                    zoom={6.5}
+                    center={[8.0, -1.2]}
+                    zoom={6.8}
                     style={{ height: '100%', width: '100%', borderRadius: '12px' }}
                     className="z-10"
                     ref={mapRef}
-                    minZoom={6}
-                    maxZoom={9}
-                    maxBounds={[[4.5, -3.5], [11.5, 1.5]]}
+                    minZoom={6.5}
+                    maxZoom={10}
+                    maxBounds={[[4.6, -3.3], [11.2, 1.2]]}
                     maxBoundsViscosity={1.0}
+                    zoomControl={true}
+                    scrollWheelZoom={true}
+                    doubleClickZoom={true}
+                    dragging={true}
+                    bounds={[[4.73, -3.26], [11.17, 1.20]]}
                   >
                     <TileLayer
                       url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    />
+                    
+                    {/* Ghana Country Border */}
+                    <GeoJSON
+                      data={ghanaBoundary}
+                      style={{
+                        color: '#1F2937',
+                        weight: 3,
+                        opacity: 0.8,
+                        fillColor: 'transparent',
+                        fillOpacity: 0,
+                        dashArray: '10, 5'
+                      }}
                     />
                     
                     <LayersControl position="topright">
@@ -1520,6 +1563,20 @@ export default function GhanaMapDashboard() {
                             );
                           })}
                         </LayerGroup>
+                      </LayersControlOverlay>
+                      
+                      <LayersControlOverlay checked name="Ghana Border">
+                        <GeoJSON
+                          data={ghanaBoundary}
+                          style={{
+                            color: '#374151',
+                            weight: 2,
+                            opacity: 0.9,
+                            fillColor: 'transparent',
+                            fillOpacity: 0,
+                            dashArray: '5, 3'
+                          }}
+                        />
                       </LayersControlOverlay>
                     </LayersControl>
                   </MapContainer>
